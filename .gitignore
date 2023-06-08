@@ -47,3 +47,11 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+
+# exclude specific folders from push to github
+figures/*
+images/*
+files/*
+data/*
+outputs/*
