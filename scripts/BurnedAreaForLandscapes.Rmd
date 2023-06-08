@@ -1,0 +1,30 @@
+---
+title: "Combustion layer for all landscapes"
+author: "Anna Talucci"
+date: "2023-04-24"
+output: html_document
+---
+
+# Overview
+
+This script generates a point file from a  Landsat raster and fire perimeters to be used to extract WNA Climate data and then process combustion with ABoVE-FED.
+
+# Packages
+```{r}
+library(terra)
+library(gdalUtilities)
+library(sf)
+library(tidyverse)
+```
+
+# Data
+
+## Shapefiles
+```{r}
+L1 = st_read("../data/FirstLandscape/caribou_pker_ck.shp", "caribou_pker_ck")
+```
+```{r}
+st_crs(L1)$proj4string
+L1_projection = st_crs(L1)$proj4string
+st_crs(L1)$epsg
+```

@@ -1,0 +1,84 @@
+---
+title: "Explore Landscape data"
+author: "Anna Talucci"
+date: "2023-04-21"
+output: html_document
+---
+
+# Overview
+
+# Packages
+
+```{r}
+library(tidyverse)
+library(sf)
+```
+# Projections
+```{r}
+wgs_proj = "+proj=longlat +datum=WGS84 +no_defs"
+```
+
+```{r}
+canada_proj = "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=50 +lat_2=70 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +type=crs"
+```
+
+# Data
+
+## Landscape 1
+
+```{r}
+L1 = st_read("../data/FirstLandscape/caribou_pker_ck.shp", "caribou_pker_ck")
+```
+```{r}
+st_crs(L1)$proj4string
+L1_projection = st_crs(L1)$proj4string
+st_crs(L1)$epsg
+```
+
+```{r}
+st_area(L1)
+```
+
+## All landscapes
+
+```{r}
+land = st_read("../data/Landscape_plots/final_plots.shp", "final_plots")
+```
+
+```{r}
+land
+```
+
+# Filter by Location
+```{r}
+unique(land$ecoregion)
+```
+
+## Select Alaska
+```{r}
+( ak = land %>% filter(ecoregion=="ALASKA BOREAL INTERIOR"))
+```
+
+# Projections
+```{r}
+st_crs(land)
+st_crs(land)$proj4string
+```
+
+
+```{r}
+st_area(land[1, ])
+```
+
+# Reproject
+
+Reproject to WGS 84 and 3338
+
+```{r}
+land_ea = st_transform(land, canada_proj)
+```
+
+```{r}
+st_area(land_ea[1, ])
+```
+

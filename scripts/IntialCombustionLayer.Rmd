@@ -1,0 +1,241 @@
+---
+title: "Landscape 1 combustion layer"
+author: "Anna Talucci"
+date: "2023-04-21"
+output: html_document
+---
+
+
+
+
+
+# Overview
+
+This script generates a point file from a  Landsat raster and fire perimeters to be used to extract WNA Climate data and then process combustion with ABoVE-FED.
+
+# Packages
+```{r}
+library(terra)
+library(gdalUtilities)
+library(sf)
+library(tidyverse)
+```
+
+# Data
+
+## Shapefiles
+```{r}
+L1 = st_read("../data/FirstLandscape/caribou_pker_ck.shp", "caribou_pker_ck")
+```
+```{r}
+st_crs(L1)$proj4string
+L1_projection = st_crs(L1)$proj4string
+st_crs(L1)$epsg
+```
+
+```{r}
+fp1 = st_read("../data/Landscape1Perimeters/193__Boundary_20040901_1400/193__Boundary_20040901_1400.shp", "193__Boundary_20040901_1400")
+fp2 = st_read("../data/Landscape1Perimeters/315_2016_Washington_Creek_20160706_1600/315_2016_Washington_Creek_20160706_1600.shp", "315_2016_Washington_Creek_20160706_1600")
+fp3 = st_read("../data/Landscape1Perimeters/333_Poker_Creek_20160629_1600/333_Poker_Creek_20160629_1600.shp", "333_Poker_Creek_20160629_1600")
+fp4 = st_read("../data/Landscape1Perimeters/538_Ruby_Creek_20150922_1400/538_Ruby_Creek_20150922_1400.shp", "538_Ruby_Creek_20150922_1400")
+fp5 = st_read("../data/Landscape1Perimeters/352_Lost_Horse_Creek_20050703_1800/352_Lost_Horse_Creek_20050703_1800.shp", "352_Lost_Horse_Creek_20050703_1800")
+```
+```{r}
+fp1
+```
+
+```{r}
+st_crs(fp1)$proj4string
+fp1_projection = st_crs(fp1)$proj4string
+st_crs(fp1)$epsg
+```
+## Raster
+
+```{r}
+r1<-rast("../data/LandscapeRaster/FiSL-Landscape1.tif")
+```
+
+
+# Projections
+```{r eval=FALSE, include=FALSE}
+raster_proj = crs(r1)
+```
+
+# Reprojection
+```{r eval=FALSE, include=FALSE}
+reproj_r1 = terra::project(r1, L1_projection)
+```
+
+```{r eval=FALSE, include=FALSE}
+l1_rasterproj = st_transform(L1, crs = raster_proj)
+```
+
+# Plot
+```{r}
+ggplot() + 
+  geom_sf(data = L1, color = "blue") +
+  geom_sf(data = fp1) +
+  geom_sf(data = fp2) +
+  geom_sf(data = fp3) +
+  geom_sf(data = fp4) +
+  geom_sf(data = fp5) +
+  ggtitle("Landscape 1") + 
+  coord_sf()
+```
+```{r}
+fp1L1<-st_crop( fp1$geometry, L1$geometry)
+fp5L1<-st_crop( fp5$geometry, L1$geometry)
+```
+
+```{r}
+ggplot() + 
+  geom_sf(data = fp1L1, color = "blue") +
+  coord_sf()
+```
+```{r}
+ggplot() + 
+  geom_sf(data = L1, color = "blue") +
+  geom_sf(data = fp1L1) +
+  geom_sf(data = fp2) +
+  geom_sf(data = fp3) +
+  geom_sf(data = fp4) +
+  geom_sf(data = fp5L1) +
+  ggtitle("Landscape 1") + 
+  coord_sf()
+```
+```{r}
+intersect<-st_intersection( fp1$geometry, L1$geometry)
+
+```
+
+```{r}
+ggplot() + 
+  geom_sf(data = intersect, color = "blue") +
+  coord_sf()
+```
+
+
+# For cropped polgygons in Landscape 1
+ adding attributes back after cropping
+ 
+## First create Dataframe of attributes
+```{r}
+fp1_df <- fp1 %>% st_drop_geometry()
+fp5_df <- fp5 %>% st_drop_geometry()
+```
+
+```{r}
+fp1_df
+fp5_df
+```
+
+## Add attritue table
+
+
+```{r}
+fp1
+```
+
+## Add column names and fill NA
+```{r}
+fp1 = st_as_sf (fp1)
+fp1L1 = st_as_sf (fp1L1)
+join = st_join(fp1L1, fp1, join = st_covers)
+fp1L1_v1 = join %>% 
+  dplyr::select(NAME, FIREID, FIREYEAR) %>%
+  mutate_at(vars(NAME), ~replace_na(., "Boundary")) %>%
+  mutate_at(vars(FIREID), ~replace_na(., 1679)) %>%
+  mutate_at(vars(FIREYEAR), ~replace_na(., "2004")) 
+```
+```{r}
+fp5
+```
+
+```{r}
+fp5 = st_as_sf (fp5)
+fp5L1 = st_as_sf (fp5L1)
+join5 = st_join(fp5L1, fp5, join = st_covers)
+fp5L1_v1 = join5 %>% 
+  dplyr::select(NAME, FIREID, FIREYEAR) %>%
+  mutate_at(vars(NAME), ~replace_na(., "Lost Horse Creek")) %>%
+  mutate_at(vars(FIREID), ~replace_na(., 2710)) %>%
+  mutate_at(vars(FIREYEAR), ~replace_na(., "2005")) 
+
+fp5L1_v1 
+```
+```{r}
+ggplot() + 
+  geom_sf(data = join, color = "blue") +
+  coord_sf()
+```
+
+# Select attributes of interest for other fires
+```{r}
+fp2L1 = fp2 %>% dplyr::select(NAME, FIREID, FIREYEAR) 
+fp2L1
+
+fp3L1 = fp3 %>% dplyr::select(NAME, FIREID, FIREYEAR)
+fp4L1 = fp4 %>% dplyr::select(NAME, FIREID, FIREYEAR) 
+```
+
+# Combine fires
+
+```{r}
+all_fires = dplyr::bind_rows(fp1L1_v1, fp2L1, fp3L1, fp4L1, fp5L1_v1)
+all_fires
+
+```
+
+```{r}
+st_write(all_fires, "../outputs/Landscape1Fires.shp", driver="ESRI Shapefile")
+```
+
+# Raster to points
+```{r}
+l1points = as.points(r1, values=TRUE, na.rm=TRUE)
+```
+
+```{r}
+l1pts = st_as_sf(l1points)
+```
+
+```{r}
+l1pts
+```
+# Write points to file
+
+```{r eval=FALSE, include=FALSE}
+st_write(l1pts, "../outputs/Landscape1_points.shp", driver="ESRI Shapefile")
+```
+
+# Plotting ...
+```{r}
+ggplot() + 
+  
+  geom_sf(data = l1pts, size=1.5, shape = 1, color ="grey50") +
+  geom_sf(data = L1, color = "blue", fill=NA) +
+  ggtitle("Raster points") + 
+  coord_sf()
+```
+
+# Select only burned points
+```{r}
+burned = st_join(l1pts, all_fires) %>% drop_na(.)
+```
+
+```{r}
+burned
+```
+```{r}
+ggplot() + 
+  geom_sf(data = burned, size=.5, shape = 1, color ="grey50") +
+  geom_sf(data = L1, color = "blue", fill=NA) +
+  geom_sf(data=all_fires, color = "red", fill=NA)
+  ggtitle("Landscape 1") + 
+  coord_sf()
+```
+
+# Write burned points to file
+```{r eval=FALSE, include=FALSE}
+st_write(burned, "../outputs/Landscape1_burned_points.shp", driver="ESRI Shapefile")
+```
