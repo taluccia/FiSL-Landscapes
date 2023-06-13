@@ -1,0 +1,123 @@
+---
+title: "RasterToPoint"
+author: "Anna Talucci"
+date: "2023-06-08"
+output: html_document
+---
+
+
+
+# Packages
+```{r}
+library(terra)
+library(gdalUtilities)
+library(sf)
+library(tidyverse)
+```
+
+# Data
+
+## Raster
+(AK: 1249, 1891, 1889, 1982, 1800)
+
+```{r}
+r1249<-rast("../data/LandsatRaster/FislAk1249.tif")
+```
+
+```{r}
+r1249
+```
+
+```{r}
+r1891<-rast("../data/LandsatRaster/FislAk1891.tif")
+```
+
+```{r}
+r1889<-rast("../data/LandsatRaster/FislAk1889.tif")
+```
+
+```{r}
+r1982<-rast("../data/LandsatRaster/FislAk1982.tif")
+```
+
+```{r}
+r1800<-rast("../data/LandsatRaster/FislAk1800.tif")
+```
+
+# Shp
+```{r}
+akBurn = st_read("../data/Fires/AkBaLf3338.shp", "AkBaLf3338")
+```
+
+
+# Raster to points
+```{r}
+points1249 = as.points(r1249, values=TRUE, na.rm=TRUE)
+pts1249 = st_as_sf(points1249) %>% mutate(ID =1249)
+```
+
+```{r}
+pts1249
+```
+```{r}
+points1891 = as.points(r1891, values=TRUE, na.rm=TRUE)
+pts1891 = st_as_sf(points1891) %>% mutate(ID =1891)
+```
+
+```{r}
+points1889 = as.points(r1889, values=TRUE, na.rm=TRUE)
+pts1889 = st_as_sf(points1889) %>% mutate(ID =1889)
+```
+
+```{r}
+points1982 = as.points(r1982, values=TRUE, na.rm=TRUE)
+pts1982 = st_as_sf(points1982) %>% mutate(ID =1982)
+```
+
+```{r}
+points1800 = as.points(r1800, values=TRUE, na.rm=TRUE)
+pts1800 = st_as_sf(points1800) %>% mutate(ID =1800)
+```
+
+# Bind points into one Data frame
+```{r}
+allPts = bind_rows(pts1249, pts1891, pts1889, pts1982, pts1800)
+```
+
+```{r}
+allPts
+```
+
+# Select only burned points
+```{r}
+burned = st_join(allPts, akBurn) %>% drop_na(.)
+```
+
+```{r}
+burned
+```
+# Plotting ...
+```{r}
+ggplot() + 
+  
+  geom_sf(data = allPts, size=1, shape = 1, color ="grey50") +
+  geom_sf(data = akBurn, color = "blue", fill=NA) +
+  ggtitle("Raster points") + 
+  coord_sf()
+```
+
+
+
+```{r}
+ggplot() + 
+  geom_sf(data = burned, size=.5, shape = 1, color ="grey50") +
+  geom_sf(data = L1, color = "blue", fill=NA) +
+  geom_sf(data=all_fires, color = "red", fill=NA)
+  ggtitle("Landscape 1") + 
+  coord_sf()
+```
+
+# Write burned points to file
+```{r eval=FALSE, include=FALSE}
+st_write(burned, "../outputs/Landscape1_burned_points.shp", driver="ESRI Shapefile")
+```
