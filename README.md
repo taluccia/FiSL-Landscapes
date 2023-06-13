@@ -8,9 +8,10 @@ The repository host processes and code for producing Landscape layers that feed 
 The process is dependent on a combination of Earth Engine (EE) Processes and R
 
 # Process
-Step 1 -- Run OrganizeShpData.Rmd --
-Step 2 -- Run LandscapeBurnedArea.Rmd
-Step 3 -- Run
+Step 1 -- EE--LandsatImageForPoints
+Step 2 -- R--Run OrganizeShpData.Rmd --
+Step 3 -- R--Run LandscapeBurnedArea.Rmd
+Step 4 -- R--RasterToPoint.Rmd -> input is Output from step 1 & 3 -> output is point shapefile for burned areas within Landscape
 
 
 
