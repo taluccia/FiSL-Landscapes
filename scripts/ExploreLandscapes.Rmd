@@ -42,11 +42,31 @@ st_area(L1)
 ## All landscapes
 
 ```{r}
-land = st_read("../data/Landscape_plots/final_plots.shp", "final_plots")
+LandLatLon = st_read("../data/Landscapes/final_plots_lat_lon.shp", "final_plots_lat_lon")
 ```
 
 ```{r}
-land
+LandLatLon
+```
+```{r}
+Land = st_read("../data/Landscapes/final_plots.shp", "final_plots")
+```
+
+```{r}
+Land
+```
+
+# Map
+```{r}
+ggplot() +
+  geom_sf(data = LandLatLon, fill=NA, color = "blue") +
+    coord_sf()
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = Land, fill=NA, color = "blue") +
+    coord_sf()
 ```
 
 # Filter by Location
