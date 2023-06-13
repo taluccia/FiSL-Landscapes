@@ -18,7 +18,13 @@ library(tidyverse)
 ```
 
 # Data
+## Raster
+```{r}
+r1<-rast("../data/LandsatRaster/FislAkLfLs.tif")
+```
 
+
+## State
 
 ```{r}
 akState = st_read("../data/Boundaries/AlaskaState3338.shp", "AlaskaState3338")
@@ -36,6 +42,7 @@ akFires = st_read("../data/Fires/AlaskaFires3338.shp", "AlaskaFires3338")
 # Select Landscapes for Alaska
 ```{r}
 Landscapes
+unique(Landscapes$ecoregion)
 ```
 
 ```{r}
@@ -56,33 +63,32 @@ ggplot() +
 ```
 # Overlay Landscapes and fire perimeters
 
+## AK
 ```{r}
-join<-st_join(akFires, ak_landscapes)
+ak_intersect<-st_intersection( akFires, ak_landscapes)
 ```
 
 ```{r}
-(ak_join = join %>% filter(ecoregion=="ALASKA BOREAL INTERIOR") )
-```
-
-```{r}
-ggplot() + 
-  geom_sf(data = ak_join, color = "orange") +
-  geom_sf(data = ak_landscapes, fill=NA, color = "blue") +
-  coord_sf()
-```
-
-```{r}
-intersect<-st_intersection( ak_join, ak_landscapes)
-```
-
-```{r}
-intersect
+ak_intersect
 ```
 
 ```{r}
 ggplot() + 
-  geom_sf(data = intersect, color = "orange") +
+  geom_sf(data = ak_intersect, color = "orange") +
   geom_sf(data = ak_landscapes, fill=NA, color = "blue") +
   coord_sf()
 ```
 
+
+```{r}
+ak_intersect %>% 
+  filter(ID==1249) %>%
+ggplot() + 
+  geom_sf( aes(color = as.character(Ig_Date))) +
+  coord_sf()
+```
+# write to file
+
+```{r eval=FALSE, include=FALSE}
+st_write(ak_intersect, "../outputs/shp/AkBaLf3338.shp", driver="ESRI Shapefile")
+```
