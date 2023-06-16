@@ -89,35 +89,133 @@ allPts
 ```
 
 # Select only burned points
-```{r}
-burned = st_join(allPts, akBurn) %>% drop_na(.)
-```
+
 
 ```{r}
-burned
+( ak_intersect<-st_intersection( allPts, akBurn) %>%
+  dplyr::mutate(fireYr = lubridate::year(Ig_Date), 
+                month = lubridate::month(Ig_Date), 
+                day = lubridate::day(Ig_Date))  %>% 
+    dplyr::mutate(ID2 = fireYr) %>%
+  filter(fireYr>= 2000) 
+  )
 ```
 # Plotting ...
 ```{r}
 ggplot() + 
   
-  geom_sf(data = allPts, size=1, shape = 1, color ="grey50") +
+  geom_sf(data = ak_intersect, size=1, shape = 1, color ="grey50") +
   geom_sf(data = akBurn, color = "blue", fill=NA) +
   ggtitle("Raster points") + 
   coord_sf()
 ```
 
 
-
+# Add fire year and ID2
 ```{r}
-ggplot() + 
-  geom_sf(data = burned, size=.5, shape = 1, color ="grey50") +
-  geom_sf(data = L1, color = "blue", fill=NA) +
-  geom_sf(data=all_fires, color = "red", fill=NA)
-  ggtitle("Landscape 1") + 
-  coord_sf()
+ak_intersect 
+  
 ```
 
-# Write burned points to file
+# Split into individual Landscapes
+(AK: 1249, 1891, 1889, 1982, 1800)
+```{r}
+(
+  burnPts1249 = ak_intersect %>% 
+   dplyr::select(lat:High_T, fireYr, month, day, ID2, ecoregion:geometry) %>%
+    filter(ID==1249)
+)
+```
+
+```{r}
+  burnPts1891 = ak_intersect %>% 
+   dplyr::select(lat:High_T, fireYr, month, day, ID2, ecoregion:geometry) %>%
+    filter(ID==1891)
+```
+
+```{r}
+  burnPts1889 = ak_intersect %>% 
+   dplyr::select(lat:High_T, fireYr, month, day, ID2, ecoregion:geometry) %>%
+    filter(ID==1889)
+```
+
+```{r}
+  burnPts1982 = ak_intersect %>% 
+   dplyr::select(lat:High_T, fireYr, month, day, ID2, ecoregion:geometry) %>%
+    filter(ID==1982)
+```
+
+```{r}
+  burnPts1800 = ak_intersect %>% 
+   dplyr::select(lat:High_T, fireYr, month, day, ID2, ecoregion:geometry) %>%
+    filter(ID==1800)
+```
+
+
+# Reproject to WGS 84
+```{r}
+burnPts1249Wgs = st_transform(burnPts1249, crs = 4326)
+burnPts1891Wgs = st_transform(burnPts1891, crs = 4326)
+burnPts1889Wgs = st_transform(burnPts1889, crs = 4326)
+burnPts1982Wgs = st_transform(burnPts1982, crs = 4326)
+burnPts1800Wgs = st_transform(burnPts1800, crs = 4326)
+```
+
+```{r}
+burnPts1249Wgs
+burnPts1891Wgs
+burnPts1889Wgs
+burnPts1982Wgs
+burnPts1800Wgs
+```
+# Fire years
+```{r}
+unique(burnPts1249Wgs$Ig_Date)
+unique(burnPts1891Wgs$Ig_Date)
+unique(burnPts1889Wgs$Ig_Date)
+unique(burnPts1982Wgs$Ig_Date)
+unique(burnPts1800Wgs$Ig_Date)
+```
+# Write to shp
+
+## EPSG 3338
 ```{r eval=FALSE, include=FALSE}
-st_write(burned, "../outputs/Landscape1_burned_points.shp", driver="ESRI Shapefile")
+st_write(burnPts1249, "../outputs/burnPts/FislAkBiBurnPts1249.shp", driver="ESRI Shapefile")
+```
+
+```{r eval=FALSE, include=FALSE}
+st_write(burnPts1891, "../outputs/burnPts/FislAkBiBurnPts1891.shp", driver="ESRI Shapefile")
+```
+
+```{r eval=FALSE, include=FALSE}
+st_write(burnPts1889, "../outputs/burnPts/FislAkBiBurnPts1889.shp", driver="ESRI Shapefile")
+```
+
+```{r eval=FALSE, include=FALSE}
+st_write(burnPts1982, "../outputs/burnPts/FislAkBiBurnPts1982.shp", driver="ESRI Shapefile")
+```
+
+```{r eval=FALSE, include=FALSE}
+st_write(burnPts1800, "../outputs/burnPts/FislAkBiBurnPts1800.shp", driver="ESRI Shapefile")
+```
+
+## EPSG 4326
+```{r eval=FALSE, include=FALSE}
+st_write(burnPts1249Wgs, "../outputs/burnPts/FislAkBiBurnPts1249Wgs.shp", driver="ESRI Shapefile")
+```
+
+```{r eval=FALSE, include=FALSE}
+st_write(burnPts1891Wgs, "../outputs/burnPts/FislAkBiBurnPts1891Wgs.shp", driver="ESRI Shapefile")
+```
+
+```{r eval=FALSE, include=FALSE}
+st_write(burnPts1889Wgs, "../outputs/burnPts/FislAkBiBurnPts1889Wgs.shp", driver="ESRI Shapefile")
+```
+
+```{r eval=FALSE, include=FALSE}
+st_write(burnPts1982Wgs, "../outputs/burnPts/FislAkBiBurnPts1982Wgs.shp", driver="ESRI Shapefile")
+```
+
+```{r eval=FALSE, include=FALSE}
+st_write(burnPts1800Wgs, "../outputs/burnPts/FislAkBiBurnPts1800Wgs.shp", driver="ESRI Shapefile")
 ```
