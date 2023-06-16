@@ -1,0 +1,104 @@
+---
+title: "LandscapeBurnedAreaCanada"
+author: "Anna Talucci"
+date: "2023-06-14"
+output: html_document
+---
+
+
+
+# Overview
+
+This script generates the burned area  for within the landscape area
+
+# Packages
+```{r}
+library(terra)
+library(gdalUtilities)
+library(sf)
+library(tidyverse)
+```
+
+# Data
+
+## State
+
+
+```{r}
+Landscapes = st_read("../data/Landscapes/final_plots_lat_lon.shp", "final_plots_lat_lon")
+```
+
+```{r}
+CanFires = st_read("../data/nbac_1986_to_2020/nbac_1986_to_2020_20210810.shp", "nbac_1986_to_2020_20210810")
+CanFires2021 = st_read("../data/nbac_2021/nbac_2021_r9_20220624.shp", "nbac_2021_r9_20220624")
+```
+
+
+# Select Landscapes for Alaska
+```{r}
+Landscapes
+unique(Landscapes$ecoregion)
+```
+
+```{r}
+( CANLandscapes = Landscapes %>% filter(ecoregion %in% c("BOREAL CORDILLERA", "TAIGA PLAIN", "TAIGA SHIELD" )))
+```
+
+# Combine Fire data frames
+```{r}
+head(CanFires)
+head(CanFires2021)
+```
+
+```{r}
+( CanFires1 = CanFires %>% dplyr::select(-BASRC_1, -new_flg) )
+```
+
+```{r}
+( allFires = bind_rows(CanFires1, CanFires2021) )
+```
+# Reproject
+```{r}
+can_landscapes = st_transform(CANLandscapes, crs = 3005)
+can_fires = st_transform(allFires, crs = 3005)
+```
+
+
+# Map
+```{r}
+ggplot() +
+  geom_sf(data = can_fires, fill=NA, color = "orange") +
+  geom_sf(data = can_landscapes, fill=NA, color = "blue") +
+    coord_sf()
+```
+# Overlay Landscapes and fire perimeters
+
+## AK
+```{r}
+ak_intersect<-st_intersection( akFires, ak_landscapes)
+```
+
+```{r}
+ak_intersect
+```
+
+```{r}
+ggplot() + 
+  geom_sf(data = ak_intersect, color = "orange") +
+  geom_sf(data = ak_landscapes, fill=NA, color = "blue") +
+  coord_sf()
+```
+
+
+```{r}
+ak_intersect %>% 
+  filter(ID==1249) %>%
+ggplot() + 
+  geom_sf( aes(color = as.character(Ig_Date))) +
+  coord_sf()
+```
+# write to file
+
+```{r eval=FALSE, include=FALSE}
+st_write(ak_intersect, "../outputs/shp/AkBaLf3338.shp", driver="ESRI Shapefile")
+```
