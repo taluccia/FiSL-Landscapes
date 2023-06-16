@@ -10,8 +10,10 @@ The process is dependent on a combination of Earth Engine (EE) Processes and R
 # Process
 Step 1 -- EE--LandsatImageForPoints
 Step 2 -- R--Run OrganizeShpData.Rmd --
+       -- R--Get fire polygonsthat overlap landscapes -> needed in EE Day of Burn
 Step 3 -- R--Run LandscapeBurnedArea.Rmd
 Step 4 -- R--RasterToPoint.Rmd -> input is Output from step 1 & 3 -> output is point shapefile for burned areas within Landscape
+Step 5 -- EE--Used burned points to extract static variables
 
 
 
@@ -32,6 +34,9 @@ Step 4 -- R--RasterToPoint.Rmd -> input is Output from step 1 & 3 -> output is p
 #  Shapefiles data 
 [Canadian Provinces](https://open.canada.ca/data/en/dataset/a883eb14-0c0e-45c4-b8c4-b54c4a819edb)
 [Alaska State Boundary](https://www.sciencebase.gov/catalog/item/59d5b565e4b05fe04cc53a91)
+
+[Alaska Fire perimeters from MTBS](https://www.mtbs.gov/direct-download)
+[Canada Fire perimeters](https://cwfis.cfs.nrcan.gc.ca/datamart/download/nbac)
 # Notes
 
 ## Combustion with ABoVE-FED
