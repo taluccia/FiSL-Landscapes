@@ -176,6 +176,18 @@ unique(burnPts1889Wgs$Ig_Date)
 unique(burnPts1982Wgs$Ig_Date)
 unique(burnPts1800Wgs$Ig_Date)
 ```
+
+# Combine all points
+
+```{r}
+(
+  akBurnPoints = bind_rows(burnPts1249Wgs, burnPts1891Wgs, burnPts1889Wgs, burnPts1982Wgs, burnPts1800Wgs)
+)
+```
+```{r}
+unique(akBurnPoints$fireYr)
+```
+
 # Write to shp
 
 ## EPSG 3338
@@ -200,6 +212,10 @@ st_write(burnPts1800, "../outputs/burnPts/FislAkBiBurnPts1800.shp", driver="ESRI
 ```
 
 ## EPSG 4326
+```{r eval=FALSE, include=FALSE}
+st_write(akBurnPoints, "../outputs/burnPts/FislAkBiBurnPtsAllWgs.shp", driver="ESRI Shapefile")
+```
+
 ```{r eval=FALSE, include=FALSE}
 st_write(burnPts1249Wgs, "../outputs/burnPts/FislAkBiBurnPts1249Wgs.shp", driver="ESRI Shapefile")
 ```
