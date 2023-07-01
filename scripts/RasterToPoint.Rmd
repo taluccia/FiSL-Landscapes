@@ -181,13 +181,27 @@ unique(burnPts1800Wgs$Ig_Date)
 
 ```{r}
 (
-  akBurnPoints = bind_rows(burnPts1249Wgs, burnPts1891Wgs, burnPts1889Wgs, burnPts1982Wgs, burnPts1800Wgs)
+  akBurnPoints = bind_rows(burnPts1249Wgs, burnPts1891Wgs, burnPts1889Wgs, burnPts1982Wgs, burnPts1800Wgs) %>%
+    dplyr::mutate(ptID = row_number()) %>%
+    dplyr::select(lat:Event_ID, ptID, ID2)
 )
 ```
 ```{r}
-unique(akBurnPoints$fireYr)
+unique(akBurnPoints$ID2)
+```
+```{r}
+akBurnPoints %>% filter(ID2==2017) %>%
+  summarize(min=min(ptID),
+            max = max(ptID),
+            median = median(ptID))
 ```
 
+```{r}
+akBurnPoints %>% filter(ID2==2013) %>%
+  summarize(min=min(ptID),
+            max = max(ptID),
+            median = median(ptID))
+```
 # Write to shp
 
 ## EPSG 3338

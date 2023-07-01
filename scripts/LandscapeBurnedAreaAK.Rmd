@@ -112,10 +112,25 @@ ggplot() +
 # Reproject to WGS 84
 ```{r}
 ak_intersectionWgs = st_transform(ak_intersection, crs = 4326)
-ak_intersectionWgs
+
 selectFiresWgs = st_transform(selectFires, crs = 4326)
+
+```
+
+```{r}
 selectFiresWgs
 ```
+# Select fires  and add fire year
+```{r}
+( selectFiresWgs = selectFiresWgs %>%
+  dplyr::mutate(fireYr = lubridate::year(Ig_Date), 
+                month = lubridate::month(Ig_Date), 
+                day = lubridate::day(Ig_Date))  %>% 
+    dplyr::mutate(ID2 = fireYr) %>%
+  filter(fireYr>= 2000) 
+)
+```
+
 # write  to shp
 
 ## burned area 

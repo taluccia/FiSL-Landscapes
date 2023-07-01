@@ -49,13 +49,13 @@ perimeters = st_read("../data/mtbs_perimeter_data/mtbs_perims_DD.shp", "mtbs_per
 ```{r}
 head(wrld)
 head(prov)
-
+head(st)
 ```
 
 # Filter 
 ##  Alaska Boundary
-```{r}
-(akState = political %>% filter(NAME_En == "Alaska") )
+```{r eval=FALSE, include=FALSE}
+(akState = st %>% filter(NAME_En == "Alaska") )
 ```
 
 ## Canada Provinces
@@ -73,6 +73,10 @@ head(prov)
 (na = wrld %>% filter(FORMAL_EN %in% c( "Canada", "United States of America")) )
 ```
 
+```{r}
+
+YKNWT = prov %>% filter(PRENAME %in% c("Yukon", "Northwest Territories"))
+```
 ##  Alaska Fires
 
 ```{r}
@@ -116,4 +120,8 @@ st_write(ak_st, "../outputs/shp/AlaskaState3338.shp", driver="ESRI Shapefile")
 
 ```{r eval=FALSE, include=FALSE}
 st_write(ak_fire, "../outputs/shp/AlaskaFires3338.shp", driver="ESRI Shapefile")
+```
+
+```{r eval=FALSE, include=FALSE}
+st_write(YKNWT, "../outputs/shp/YkNwt.shp", driver="ESRI Shapefile")
 ```

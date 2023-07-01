@@ -13,12 +13,20 @@ Step 2 -- R--Run OrganizeShpData.Rmd --
        -- R--Get fire polygonsthat overlap landscapes -> needed in EE Day of Burn
 Step 3 -- R--Run LandscapeBurnedArea.Rmd
 Step 4 -- R--RasterToPoint.Rmd -> input is Output from step 1 & 3 -> output is point shapefile for burned areas within Landscape
-Step 5 -- EE--Used burned points to extract static variables
+Step 5 -- EE--Static Variable Extract Used burned points to extract static variables
+Step 6 -- EE--Landsat Veg Indicies
+Step 7 -- EE--Tasselled Cap*
 
 
 
 
-
+EE Processing
+-- Static Variable extract
+-- Landsat Vegatation Indices Extract
+-- Tree Cover Extract
+-- TCT extract
+-- Day of Burn Script
+-- FWI Extract
 
 *  EE Acquire DEMs
 *  EE Static Variable extract
@@ -38,6 +46,12 @@ Step 5 -- EE--Used burned points to extract static variables
 [Alaska Fire perimeters from MTBS](https://www.mtbs.gov/direct-download)
 [Canada Fire perimeters](https://cwfis.cfs.nrcan.gc.ca/datamart/download/nbac)
 # Notes
+
+
+# Tasseled cap Notes
+For coefficients for Landsat 8 TOA see --- Muhammad Hasan Ali Baig, Lifu Zhang, Tong Shuai & Qingxi Tong (2014) Derivation of a tasselled cap transformation based on Landsat 8 at-satellite reflectance, Remote Sensing Letters, 5:5, 423-431, DOI: 10.1080/2150704X.2014.915434
+
+[Coeffcients](https://gis.stackexchange.com/questions/156161/tasseled-cap-transformation-coefficient-and-bias-value)
 
 ## Combustion with ABoVE-FED
 Three scripts from Stefano; all of these scripts take a shapefile of burned pixel centroids as the input.  The shapefile needs to have a date of burn, a unique pixel identifier and the year of burn in order to get all the scripts to work.  All the scripts will output csv files which can then be used to predict the R models on and those predictions can be joined back into the shapefile based on each pixel's unique ID and then rasterized. 
