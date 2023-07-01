@@ -1,0 +1,75 @@
+---
+title: "Julian to month day year date"
+author: "Anna Talucci"
+date: '2022-09-28'
+output: html_document
+---
+
+# Overview
+Take Day of Burn julian day can convert to YYYY-MM-DD
+
+
+# Library
+```{r}
+library(tidyverse)
+library(sf)
+library(vroom)
+```
+
+
+# Data
+## Shapefile
+
+```{r}
+pts = st_read("../data/burnPts/FislAkBiBurnPtsAllWgs.shp", "FislAkBiBurnPtsAllWgs")
+```
+```{r}
+pts
+```
+## DoB
+# vector of data files
+
+```{r}
+f <- list.files(path = "../data/DayOfBurn/Ak/", pattern = "*.csv", full.names = TRUE)
+allData = vroom::vroom(f)
+```
+
+```{r}
+allData
+```
+
+```{r}
+oneData = read_csv("../data/DayOfBurn/Ak/LsDoBAK2000.csv")
+```
+
+```{r}
+oneData
+```
+# add Date as string
+```{r}
+data1 = allData %>% 
+  mutate(yyyymmdd = as.Date(DoB, origin = as.Date(paste0(ID2,"-01-01")))) %>%
+  dplyr::select(DoB:ptID, yyyymmdd) %>%
+  mutate(Date = as.character(yyyymmdd)) %>% 
+  dplyr::select(ptID, DoB, yyyymmdd, Date) %>%
+  left_join(., pts, by = join_by(ptID)) %>%
+  rename(DOB_Ist = DoB, FIREID=Event_ID) %>%
+  dplyr::select(ID, ID2, DOB_Ist, Date, FIREID, lat, lon, ptID, geometry) 
+
+
+
+
+
+```
+
+# Get calendar date
+with quotes and separated by comma to add to GEE code.
+
+```{r}
+cat(paste0(sprintf("'%s'", unique(data1$Date)), collapse = ", "))
+```
+
+# Save pt shp file
+```{r eval=FALSE, include=FALSE}
+st_write(data1, "../outputs/DoBpts/FislAKDoBpts.shp", driver="ESRI Shapefile")
+```
