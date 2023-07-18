@@ -13,6 +13,7 @@ library(terra)
 library(gdalUtilities)
 library(sf)
 library(tidyverse)
+library(ids)
 ```
 
 # Data
@@ -182,8 +183,9 @@ unique(burnPts1800Wgs$Ig_Date)
 ```{r}
 (
   akBurnPoints = bind_rows(burnPts1249Wgs, burnPts1891Wgs, burnPts1889Wgs, burnPts1982Wgs, burnPts1800Wgs) %>%
-    dplyr::mutate(ptID = row_number()) %>%
-    dplyr::select(lat:Event_ID, ptID, ID2)
+    mutate(ptID = random_id(n= 1182065, bytes = 4)) %>%
+    dplyr::select(lat:Event_ID, ptID, ID2) %>%
+    rename(ID1=ptID)
 )
 ```
 ```{r}
@@ -203,49 +205,70 @@ akBurnPoints %>% filter(ID2==2013) %>%
             median = median(ptID))
 ```
 # Write to shp
-
-## EPSG 3338
-```{r eval=FALSE, include=FALSE}
-st_write(burnPts1249, "../outputs/burnPts/FislAkBiBurnPts1249.shp", driver="ESRI Shapefile")
-```
-
-```{r eval=FALSE, include=FALSE}
-st_write(burnPts1891, "../outputs/burnPts/FislAkBiBurnPts1891.shp", driver="ESRI Shapefile")
-```
-
-```{r eval=FALSE, include=FALSE}
-st_write(burnPts1889, "../outputs/burnPts/FislAkBiBurnPts1889.shp", driver="ESRI Shapefile")
-```
-
-```{r eval=FALSE, include=FALSE}
-st_write(burnPts1982, "../outputs/burnPts/FislAkBiBurnPts1982.shp", driver="ESRI Shapefile")
-```
-
-```{r eval=FALSE, include=FALSE}
-st_write(burnPts1800, "../outputs/burnPts/FislAkBiBurnPts1800.shp", driver="ESRI Shapefile")
-```
-
 ## EPSG 4326
 ```{r eval=FALSE, include=FALSE}
 st_write(akBurnPoints, "../outputs/burnPts/FislAkBiBurnPtsAllWgs.shp", driver="ESRI Shapefile")
 ```
 
-```{r eval=FALSE, include=FALSE}
-st_write(burnPts1249Wgs, "../outputs/burnPts/FislAkBiBurnPts1249Wgs.shp", driver="ESRI Shapefile")
+# with Purrr
+
+## functions
+```{r}
+df_to_sf <- function(x){
+  st_as_sf(x, 
+           coords = c("lon","lat"),
+           crs=3338)
+}
 ```
 
-```{r eval=FALSE, include=FALSE}
-st_write(burnPts1891Wgs, "../outputs/burnPts/FislAkBiBurnPts1891Wgs.shp", driver="ESRI Shapefile")
+## List of rasters
+```{r}
+rastlist <- list.files(path="../data/LandsatRaster/BI",pattern='tif$', full.names = TRUE)
 ```
 
-```{r eval=FALSE, include=FALSE}
-st_write(burnPts1889Wgs, "../outputs/burnPts/FislAkBiBurnPts1889Wgs.shp", driver="ESRI Shapefile")
+```{r}
+rastlist
+```
+## Name items in a list with file name
+```{r}
+names(rastlist) <- tools::file_path_sans_ext(basename(rastlist))
 ```
 
-```{r eval=FALSE, include=FALSE}
-st_write(burnPts1982Wgs, "../outputs/burnPts/FislAkBiBurnPts1982Wgs.shp", driver="ESRI Shapefile")
+## Map functions across list
+```{r}
+x <- purrr::map(rastlist, rast) %>%
+  purrr::map(., as.points) %>%
+  purrr::map(., df_to_sf) %>% 
+  map2(names(.), ~mutate(.x, FXN = .y)) %>%
+  bind_rows() %>%
+  st_intersection(., akBurn) %>%
+  dplyr::mutate(fireYr = lubridate::year(Ig_Date), 
+                month = lubridate::month(Ig_Date), 
+                day = lubridate::day(Ig_Date))  %>% 
+    dplyr::mutate(ID2 = fireYr) %>%
+  filter(fireYr>= 2000) %>%
+     mutate(ptID = random_id(n= n(), bytes = 4)) %>%
+    dplyr::select(lat:Event_ID, ptID, ID2) %>%
+    rename(ID1=ptID)
+
 ```
 
-```{r eval=FALSE, include=FALSE}
-st_write(burnPts1800Wgs, "../outputs/burnPts/FislAkBiBurnPts1800Wgs.shp", driver="ESRI Shapefile")
+```{r}
+x
+```
+
+# Select only burned points
+
+
+```{r}
+( ak_intersect<-st_intersection( allPts, akBurn) %>%
+  dplyr::mutate(fireYr = lubridate::year(Ig_Date), 
+                month = lubridate::month(Ig_Date), 
+                day = lubridate::day(Ig_Date))  %>% 
+    dplyr::mutate(ID2 = fireYr) %>%
+  filter(fireYr>= 2000) %>%
+     mutate(ptID = random_id(n= n(), bytes = 4)) %>%
+    dplyr::select(lat:Event_ID, ptID, ID2) %>%
+    rename(ID1=ptID)
+  )
 ```
