@@ -4,7 +4,7 @@ author: "Anna Talucci"
 date: "2023-06-08"
 output: html_document
 ---
-
+# Overview
 
 
 # Packages
@@ -14,205 +14,45 @@ library(gdalUtilities)
 library(sf)
 library(tidyverse)
 library(ids)
+library(stringi)
 ```
 
 # Data
 
-## Raster
-(AK: 1249, 1891, 1889, 1982, 1800)
+## Perimeter Shapefile Data
 
 ```{r}
-r1249<-rast("../data/LandsatRaster/FislAk1249.tif")
-```
-
-```{r}
-r1249
+akBurn = st_read("../data/burnArea/LBaAk3338.shp", "LBaAk3338")
 ```
 
 ```{r}
-r1891<-rast("../data/LandsatRaster/FislAk1891.tif")
+canBurn = st_read("../data/burnArea/LBaCanf3005.shp", "LBaCanf3005")
+```
+
+## List of rasters
+```{r}
+bilist <- list.files(path="../data/LandsatRaster/BI",pattern='tif$', full.names = TRUE)
 ```
 
 ```{r}
-r1889<-rast("../data/LandsatRaster/FislAk1889.tif")
+bilist
 ```
 
 ```{r}
-r1982<-rast("../data/LandsatRaster/FislAk1982.tif")
+bclist <- list.files(path="../data/LandsatRaster/BC",pattern='tif$', full.names = TRUE)
+tplist <- list.files(path="../data/LandsatRaster/TP",pattern='tif$', full.names = TRUE)
+tslist <- list.files(path="../data/LandsatRaster/TS",pattern='tif$', full.names = TRUE)
 ```
 
+### Name items in a list with file name
 ```{r}
-r1800<-rast("../data/LandsatRaster/FislAk1800.tif")
+names(bilist) <- tools::file_path_sans_ext(basename(bilist))
+names(bclist) <- tools::file_path_sans_ext(basename(bclist))
+names(tplist) <- tools::file_path_sans_ext(basename(tplist))
+names(tslist) <- tools::file_path_sans_ext(basename(tslist))
 ```
 
-# Shp
-```{r}
-akBurn = st_read("../data/Fires/AkBaLf3338.shp", "AkBaLf3338")
-```
-
-
-# Raster to points
-```{r}
-points1249 = as.points(r1249, values=TRUE, na.rm=TRUE)
-pts1249 = st_as_sf(points1249) %>% mutate(ID =1249)
-```
-
-```{r}
-pts1249
-```
-```{r}
-points1891 = as.points(r1891, values=TRUE, na.rm=TRUE)
-pts1891 = st_as_sf(points1891) %>% mutate(ID =1891)
-```
-
-```{r}
-points1889 = as.points(r1889, values=TRUE, na.rm=TRUE)
-pts1889 = st_as_sf(points1889) %>% mutate(ID =1889)
-```
-
-```{r}
-points1982 = as.points(r1982, values=TRUE, na.rm=TRUE)
-pts1982 = st_as_sf(points1982) %>% mutate(ID =1982)
-```
-
-```{r}
-points1800 = as.points(r1800, values=TRUE, na.rm=TRUE)
-pts1800 = st_as_sf(points1800) %>% mutate(ID =1800)
-```
-
-# Bind points into one Data frame
-```{r}
-allPts = bind_rows(pts1249, pts1891, pts1889, pts1982, pts1800)
-```
-
-```{r}
-allPts
-```
-
-# Select only burned points
-
-
-```{r}
-( ak_intersect<-st_intersection( allPts, akBurn) %>%
-  dplyr::mutate(fireYr = lubridate::year(Ig_Date), 
-                month = lubridate::month(Ig_Date), 
-                day = lubridate::day(Ig_Date))  %>% 
-    dplyr::mutate(ID2 = fireYr) %>%
-  filter(fireYr>= 2000) 
-  )
-```
-# Plotting ...
-```{r}
-ggplot() + 
-  
-  geom_sf(data = ak_intersect, size=1, shape = 1, color ="grey50") +
-  geom_sf(data = akBurn, color = "blue", fill=NA) +
-  ggtitle("Raster points") + 
-  coord_sf()
-```
-
-
-# Add fire year and ID2
-```{r}
-ak_intersect 
-  
-```
-
-# Split into individual Landscapes
-(AK: 1249, 1891, 1889, 1982, 1800)
-```{r}
-(
-  burnPts1249 = ak_intersect %>% 
-   dplyr::select(lat:High_T, fireYr, month, day, ID2, ecoregion:geometry) %>%
-    filter(ID==1249)
-)
-```
-
-```{r}
-  burnPts1891 = ak_intersect %>% 
-   dplyr::select(lat:High_T, fireYr, month, day, ID2, ecoregion:geometry) %>%
-    filter(ID==1891)
-```
-
-```{r}
-  burnPts1889 = ak_intersect %>% 
-   dplyr::select(lat:High_T, fireYr, month, day, ID2, ecoregion:geometry) %>%
-    filter(ID==1889)
-```
-
-```{r}
-  burnPts1982 = ak_intersect %>% 
-   dplyr::select(lat:High_T, fireYr, month, day, ID2, ecoregion:geometry) %>%
-    filter(ID==1982)
-```
-
-```{r}
-  burnPts1800 = ak_intersect %>% 
-   dplyr::select(lat:High_T, fireYr, month, day, ID2, ecoregion:geometry) %>%
-    filter(ID==1800)
-```
-
-
-# Reproject to WGS 84
-```{r}
-burnPts1249Wgs = st_transform(burnPts1249, crs = 4326)
-burnPts1891Wgs = st_transform(burnPts1891, crs = 4326)
-burnPts1889Wgs = st_transform(burnPts1889, crs = 4326)
-burnPts1982Wgs = st_transform(burnPts1982, crs = 4326)
-burnPts1800Wgs = st_transform(burnPts1800, crs = 4326)
-```
-
-```{r}
-burnPts1249Wgs
-burnPts1891Wgs
-burnPts1889Wgs
-burnPts1982Wgs
-burnPts1800Wgs
-```
-# Fire years
-```{r}
-unique(burnPts1249Wgs$Ig_Date)
-unique(burnPts1891Wgs$Ig_Date)
-unique(burnPts1889Wgs$Ig_Date)
-unique(burnPts1982Wgs$Ig_Date)
-unique(burnPts1800Wgs$Ig_Date)
-```
-
-# Combine all points
-
-```{r}
-(
-  akBurnPoints = bind_rows(burnPts1249Wgs, burnPts1891Wgs, burnPts1889Wgs, burnPts1982Wgs, burnPts1800Wgs) %>%
-    mutate(ptID = random_id(n= 1182065, bytes = 4)) %>%
-    dplyr::select(lat:Event_ID, ptID, ID2) %>%
-    rename(ID1=ptID)
-)
-```
-```{r}
-unique(akBurnPoints$ID2)
-```
-```{r}
-akBurnPoints %>% filter(ID2==2017) %>%
-  summarize(min=min(ptID),
-            max = max(ptID),
-            median = median(ptID))
-```
-
-```{r}
-akBurnPoints %>% filter(ID2==2013) %>%
-  summarize(min=min(ptID),
-            max = max(ptID),
-            median = median(ptID))
-```
-# Write to shp
-## EPSG 4326
-```{r eval=FALSE, include=FALSE}
-st_write(akBurnPoints, "../outputs/burnPts/FislAkBiBurnPtsAllWgs.shp", driver="ESRI Shapefile")
-```
-
-# with Purrr
-
-## functions
+# Functions
 ```{r}
 df_to_sf <- function(x){
   st_as_sf(x, 
@@ -221,22 +61,10 @@ df_to_sf <- function(x){
 }
 ```
 
-## List of rasters
+# Map functions across list
 ```{r}
-rastlist <- list.files(path="../data/LandsatRaster/BI",pattern='tif$', full.names = TRUE)
-```
-
-```{r}
-rastlist
-```
-## Name items in a list with file name
-```{r}
-names(rastlist) <- tools::file_path_sans_ext(basename(rastlist))
-```
-
-## Map functions across list
-```{r}
-x <- purrr::map(rastlist, rast) %>%
+geousa <- function(list){ 
+  purrr::map(list, rast) %>%
   purrr::map(., as.points) %>%
   purrr::map(., df_to_sf) %>% 
   map2(names(.), ~mutate(.x, FXN = .y)) %>%
@@ -245,30 +73,75 @@ x <- purrr::map(rastlist, rast) %>%
   dplyr::mutate(fireYr = lubridate::year(Ig_Date), 
                 month = lubridate::month(Ig_Date), 
                 day = lubridate::day(Ig_Date))  %>% 
-    dplyr::mutate(ID2 = fireYr) %>%
   filter(fireYr>= 2000) %>%
-     mutate(ptID = random_id(n= n(), bytes = 4)) %>%
-    dplyr::select(lat:Event_ID, ptID, ID2) %>%
-    rename(ID1=ptID)
+     mutate(ptID = stri_rand_strings(n(), 8)) %>%
+  mutate(eco = substr(FXN,5,6)) %>%
+  mutate(ID = as.numeric(str_extract(FXN, "[0-9]+"))) %>%
+    dplyr::select(lat, lon, ID, eco, Event_ID, Ig_Date, ptID, fireYr) %>%
+    rename(ID1=ptID, ID2=fireYr) %>%
+  st_transform(., crs = 4326)
+}
 
 ```
 
 ```{r}
-x
+geocan <- function(list){ 
+  purrr::map(list, rast) %>%
+  purrr::map(., as.points) %>%
+  purrr::map(., df_to_sf) %>% 
+  map2(names(.), ~mutate(.x, FXN = .y)) %>%
+  bind_rows() %>%
+  st_intersection(., canBurn) %>%
+  dplyr::mutate(fireYr = lubridate::year(SDATE), 
+                month = lubridate::month(SDATE), 
+                day = lubridate::day(SDATE))  %>% 
+  filter(fireYr>= 2000) %>%
+     mutate(ptID = stri_rand_strings(n(), 8)) %>%
+  mutate(eco = substr(FXN,5,6)) %>%
+  mutate(ID = as.numeric(str_extract(FXN, "[0-9]+"))) %>%
+    dplyr::select(lat, lon, ID, eco, NFIREID, SDATE, ptID, fireYr) %>%
+    rename(ID1=ptID, ID2=fireYr) %>%
+  st_transform(., crs = 4326)
+}
+
+```
+# Apply Functions
+```{r}
+bi = geousa(bilist)
+bc = geocan(bclist)
+tp = geocan(tplist)
+ts = geocan(tslist)
 ```
 
-# Select only burned points
-
+## Check and summarize
+```{r}
+bi
+length(unique(bi$ID1))
+unique(bi$ID2)
+```
+```{r}
+bc
+length(unique(bc$ID1))
+unique(bc$ID2)
+```
 
 ```{r}
-( ak_intersect<-st_intersection( allPts, akBurn) %>%
-  dplyr::mutate(fireYr = lubridate::year(Ig_Date), 
-                month = lubridate::month(Ig_Date), 
-                day = lubridate::day(Ig_Date))  %>% 
-    dplyr::mutate(ID2 = fireYr) %>%
-  filter(fireYr>= 2000) %>%
-     mutate(ptID = random_id(n= n(), bytes = 4)) %>%
-    dplyr::select(lat:Event_ID, ptID, ID2) %>%
-    rename(ID1=ptID)
-  )
+tp
+length(unique(tp$ID1))
+unique(tp$ID2)
+```
+
+```{r}
+ts
+length(unique(ts$ID1))
+unique(ts$ID2)
+```
+
+# Write to shp
+
+```{r}
+st_write(bi, "../outputs/burnPts/FislBiBurnPtsAllWgs.shp", driver="ESRI Shapefile")
+st_write(bc, "../outputs/burnPts/FislBcBurnPtsAllWgs.shp", driver="ESRI Shapefile")
+st_write(tp, "../outputs/burnPts/FislTpBurnPtsAllWgs.shp", driver="ESRI Shapefile")
+st_write(ts, "../outputs/burnPts/FislTsBurnPtsAllWgs.shp", driver="ESRI Shapefile")
 ```
