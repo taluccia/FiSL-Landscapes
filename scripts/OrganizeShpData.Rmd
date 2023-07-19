@@ -7,7 +7,11 @@ output: html_document
 
 # Overview
 
-This script generates the burned area  for within the landscape area
+Pull out AK fire perimeters from full USA data set
+
+Combines Canadian Fires into single shape file
+
+Adds eco property to landscapes
 
 # Packages
 ```{r}
@@ -18,100 +22,68 @@ library(tidyverse)
 ```
 
 # Data
-
-## Politcal Boundaries
-```{r eval=FALSE, include=FALSE}
-political = st_read("../data/PoliticalBoundaries_Shapefile/NA_PoliticalDivisions/data/bound_p/boundaries_p_2021_v3.shp", "boundaries_p_2021_v3")
-```
+## State
+	
 ```{r}
-wrld = st_read("../data/world/WB_countries_Admin0_10m.shp", "WB_countries_Admin0_10m")
+st = st_read("../data/alaska/GU_StateOrTerritory.shp", "GU_StateOrTerritory") 
 ```
 
-lpr_000b16a_e
-## Provences
+## Landscapes
 ```{r}
-prov = st_read("../data/lpr_000b16a_e/lpr_000b16a_e.shp", "lpr_000b16a_e")
+landscapes = st_read("../data/Landscapes/final_plots_lat_lon.shp", "final_plots_lat_lon")
 ```
-
-## state
-```{r}
-st = st_read("../data/alaska/GU_StateOrTerritory.shp", "GU_StateOrTerritory")
-```
-
 
 ## USA Fire perimeters
 ```{r}
-perimeters = st_read("../data/mtbs_perimeter_data/mtbs_perims_DD.shp", "mtbs_perims_DD")
-
+usa = st_read("../data/mtbs_perimeter_data/mtbs_perims_DD.shp", "mtbs_perims_DD")
 ```
-
-# View Dataframe
+## Canadian Fires
 ```{r}
-head(wrld)
-head(prov)
-head(st)
+CanFires = st_read("../data/nbac_1986_to_2020/nbac_1986_to_2020_20210810.shp", "nbac_1986_to_2020_20210810")
+CanFires2021 = st_read("../data/nbac_2021/nbac_2021_r9_20220624.shp", "nbac_2021_r9_20220624")
 ```
 
-# Filter 
-##  Alaska Boundary
-```{r eval=FALSE, include=FALSE}
+# Select Alaska Fires
+```{r}
+( akFires = usa %>% filter(BurnBndLat > 50) )
+```
+
+# Combine Canadian Fires
+```{r}
+( CanFires = CanFires %>% dplyr::select(-BASRC_1, -new_flg) %>%
+    bind_rows(., CanFires2021) %>%
+    dplyr::select(-COMMENTS))
+```
+
+
+#  Alaska Boundary 
+ 
+```{r}
 (akState = st %>% filter(NAME_En == "Alaska") )
 ```
 
-## Canada Provinces
 
-## Candaa plus AK Boundaries
-```{r eval=FALSE, include=FALSE}
-(boreal = political %>% filter(NAME_En %in% c( "Alaska", "Alberta", "British Columbia", "Manitoba", "New Brunswick",  "Northwest Territories", "Newfoundland and Labrador", "Nova Scotia" , "Nunavut", "Ontario", "Prince Edward Island" , "Quebec", "Saskatchewan",   "Yukon")) )
-```
+# Add property to landscapes
 
-```{r eval=FALSE, include=FALSE}
-(boreal = political %>% filter(FORMAL_EN %in% c( "Alaska", "Alberta", "British Columbia", "Manitoba", "New Brunswick",  "Northwest Territories", "Newfoundland and Labrador", "Nova Scotia" , "Nunavut", "Ontario", "Prince Edward Island" , "Quebec", "Saskatchewan",   "Yukon")) )
+```{r}
+landscapes = landscapes %>% 
+  mutate(eco = ifelse(ecoregion == "ALASKA BOREAL INTERIOR", "BI",
+                                     ifelse(ecoregion == "BOREAL CORDILLERA", "BC",
+                                            ifelse(ecoregion == "TAIGA PLAIN", "TP",
+                                                   ifelse(ecoregion == "TAIGA SHIELD", "TS", "NA")))))
 ```
 
 ```{r}
-(na = wrld %>% filter(FORMAL_EN %in% c( "Canada", "United States of America")) )
+landscapes
 ```
-
-```{r}
-
-YKNWT = prov %>% filter(PRENAME %in% c("Yukon", "Northwest Territories"))
-```
-##  Alaska Fires
-
-```{r}
-( akFires = perimeters %>% filter(BurnBndLat > 50) )
-```
-
-# Projections
 
 # Reproject
 
 ```{r}
-ak_st = st_transform(st, crs = 3338)
-ak_fire = st_transform(akFires, crs = 3338)
+akFires = st_transform(akFires, crs = 3338)
+akState = st_transform(akState, crs = 3338)
+CanFires = st_transform(CanFires, crs = 3005)
 ```
-# Select
-
-# Maps
-
-```{r}
-ggplot(data = na) +
-    geom_sf()
-```
-
-```{r}
-ggplot(data = prov) +
-    geom_sf()
-```
-
-```{r}
-ggplot() +
-     geom_sf(data = ak_st, fill = "#C0C0C0", colour="#A9AB9D") +
-  geom_sf(data = ak_fire, fill=NA, color = "orange")
-    coord_sf()
-```
-
 
 # Write to file
 ```{r eval=FALSE, include=FALSE}
@@ -119,9 +91,13 @@ st_write(ak_st, "../outputs/shp/AlaskaState3338.shp", driver="ESRI Shapefile")
 ```
 
 ```{r eval=FALSE, include=FALSE}
-st_write(ak_fire, "../outputs/shp/AlaskaFires3338.shp", driver="ESRI Shapefile")
+st_write(akFires, "../outputs/perimeters/AlaskaFires3338.shp", driver="ESRI Shapefile")
 ```
 
 ```{r eval=FALSE, include=FALSE}
-st_write(YKNWT, "../outputs/shp/YkNwt.shp", driver="ESRI Shapefile")
+st_write(CanFires, "../outputs/perimeters/CanadaFires3005.shp", driver="ESRI Shapefile")
+```
+
+```{r eval=FALSE, include=FALSE}
+st_write(landscapes, "../outputs/landscapes/finalPlotsWGS84.shp", driver="ESRI Shapefile")
 ```
