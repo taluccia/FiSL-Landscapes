@@ -48,7 +48,10 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-
+# For Mac users computer specific files
+#**/.DS_Store
+**/._models
+**/._FiSL-Landscapes.Rproj
 # exclude specific folders from push to github
 figures/*
 images/*
