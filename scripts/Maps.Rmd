@@ -1,0 +1,61 @@
+---
+title: "Maps"
+author: "Anna Talucci"
+date: "2023-07-18"
+output: html_document
+---
+
+# Overview
+
+This script generates the burned area  for within the landscape area
+
+# Packages
+```{r}
+library(terra)
+library(gdalUtilities)
+library(sf)
+library(tidyverse)
+```
+
+# Data
+
+## State
+
+```{r}
+akState = st_read("../data/Boundaries/AlaskaState3338.shp", "AlaskaState3338")
+```
+
+```{r}
+Landscapes = st_read("../data/Landscapes/final_plots_lat_lon.shp", "final_plots_lat_lon")
+```
+
+```{r}
+akFires = st_read("../data/Fires/AlaskaFires3338.shp", "AlaskaFires3338")
+```
+
+
+# Select Landscapes for Alaska
+```{r}
+Landscapes
+unique(Landscapes$ecoregion)
+```
+
+```{r}
+( akLandscapes = Landscapes %>% filter(ecoregion=="ALASKA BOREAL INTERIOR"))
+```
+
+# Reproject
+```{r}
+ak_landscapes = st_transform(akLandscapes, crs = 3338)
+```
+
+
+
+# Map
+```{r}
+ggplot() +
+     geom_sf(data = akState, fill = "#C0C0C0", colour="#A9AB9D") +
+  geom_sf(data = akFires, fill=NA, color = "orange") +
+  geom_sf(data = ak_landscapes, fill=NA, color = "blue") +
+    coord_sf()
+```
