@@ -8,7 +8,7 @@ The repository host processes and code for producing Landscape layers that feed 
 The process is dependent on a combination of Earth Engine (EE) Processes and R
 
 # Process
-Step 1 -- EE--LandsatImageForPoints
+Step 1 -- EE--LandsatImageForPoints export as equal area with 30m resolution
 Step 2 -- R--Run OrganizeShpData.Rmd --
        -- R--Get fire polygonsthat overlap landscapes -> needed in EE Day of Burn
 Step 3 -- R--Run LandscapeBurnedArea.Rmd
