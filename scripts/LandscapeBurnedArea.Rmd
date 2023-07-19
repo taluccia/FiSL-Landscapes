@@ -1,0 +1,90 @@
+---
+title: "Landscape plus burned area"
+author: "Anna Talucci"
+date: "2023-06-07"
+output: html_document
+---
+
+# Overview
+
+This script generates the burned area  for within the landscape area
+
+# Packages
+```{r}
+library(terra)
+library(gdalUtilities)
+library(sf)
+library(tidyverse)
+```
+
+# Data
+
+## Landscapes
+```{r}
+Landscapes = st_read("../data/Landscapes/final_plots_lat_lon.shp", "final_plots_lat_lon")
+```
+## Fires
+```{r}
+akFires = st_read("../data/perimeters/AlaskaFires3338.shp", "AlaskaFires3338")
+```
+
+```{r}
+CanFires = st_read("../data/perimeters/CanadaFires3005.shp", "CanadaFires3005")
+```
+
+# Landscape info 
+```{r}
+Landscapes
+unique(Landscapes$ecoregion)
+```
+
+
+
+
+# Process
+## For AK
+```{r}
+bi = Landscapes %>% filter(ecoregion=="ALASKA BOREAL INTERIOR") %>%
+  st_transform(., crs = 3338) %>%
+  st_intersection( akFires, .) %>% 
+  dplyr::mutate(fireYr = lubridate::year(Ig_Date), 
+                month = lubridate::month(Ig_Date), 
+                day = lubridate::day(Ig_Date)) %>%
+  filter(fireYr>= 2000) 
+```
+
+```{r}
+bi
+```
+
+## For Canada
+```{r}
+can = Landscapes %>% filter(ecoregion %in% c("BOREAL CORDILLERA", "TAIGA PLAIN", "TAIGA SHIELD" )) %>%
+  st_transform(., crs = 3005) %>%
+  st_intersection( CanFires, .) %>% 
+  dplyr::mutate(fireYr = lubridate::year(SDATE), 
+                month = lubridate::month(SDATE), 
+                day = lubridate::day(SDATE)) %>%
+  filter(fireYr>= 2000)
+```
+
+```{r}
+can
+```
+# write  to shp
+
+```{r eval=FALSE, include=FALSE}
+st_write(bi, "../outputs/burnArea/LBaAk3338.shp", driver="ESRI Shapefile")
+```
+
+```{r eval=FALSE, include=FALSE}
+st_write(can, "../outputs/burnArea/LBaCanf3005.shp", driver="ESRI Shapefile")
+```
+
+
+
+
+
+
+
+
