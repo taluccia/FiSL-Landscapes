@@ -55,6 +55,35 @@ Land = st_read("../data/Landscapes/final_plots.shp", "final_plots")
 ```{r}
 Land
 ```
+## State
+
+```{r}
+akState = st_read("../data/Boundaries/AlaskaState3338.shp", "AlaskaState3338")
+```
+
+
+
+```{r}
+akFires = st_read("../data/Fires/AlaskaFires3338.shp", "AlaskaFires3338")
+```
+
+# Select Landscapes for Alaska
+```{r}
+Landscapes
+unique(Landscapes$ecoregion)
+```
+
+```{r}
+( akLandscapes = LandLatLon %>% filter(ecoregion=="ALASKA BOREAL INTERIOR"))
+```
+
+# Reproject
+```{r}
+ak_landscapes = st_transform(akLandscapes, crs = 3338)
+```
+
+
+
 
 # Map
 ```{r}
@@ -69,36 +98,11 @@ ggplot() +
     coord_sf()
 ```
 
-# Filter by Location
-```{r}
-unique(land$ecoregion)
-```
-
-## Select Alaska
-```{r}
-( ak = land %>% filter(ecoregion=="ALASKA BOREAL INTERIOR"))
-```
-
-# Projections
-```{r}
-st_crs(land)
-st_crs(land)$proj4string
-```
-
 
 ```{r}
-st_area(land[1, ])
+ggplot() +
+     geom_sf(data = akState, fill = "#C0C0C0", colour="#A9AB9D") +
+  geom_sf(data = akFires, fill=NA, color = "orange") +
+  geom_sf(data = ak_landscapes, fill=NA, color = "blue") +
+    coord_sf()
 ```
-
-# Reproject
-
-Reproject to WGS 84 and 3338
-
-```{r}
-land_ea = st_transform(land, canada_proj)
-```
-
-```{r}
-st_area(land_ea[1, ])
-```
-
