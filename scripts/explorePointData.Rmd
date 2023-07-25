@@ -1,0 +1,45 @@
+---
+title: "Explore Point data"
+author: "Anna Talucci"
+date: "2023-07-21"
+output: html_document
+---
+
+
+# Packages
+```{r}
+library(terra)
+library(gdalUtilities)
+library(sf)
+library(tidyverse)
+```
+
+# Data
+
+```{r}
+points = st_read("../outputs/burnPts/FislBurnPtsAllWgs.shp", "FislBurnPtsAllWgs")
+
+```
+
+```{r}
+points 
+```
+
+```{r}
+sort(unique(points$ID2))
+```
+
+```{r}
+points %>% st_drop_geometry() %>% group_by(eco, ID2, N) %>% summarize(n=n())
+
+```
+
+```{r}
+df = points %>% st_drop_geometry() %>% filter(eco=="TS") %>% filter(ID2==2017) 
+```
+
+```{r}
+min(df$RID)
+quantile(df$RID)
+max(df$RID)
+```
