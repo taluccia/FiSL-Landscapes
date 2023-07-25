@@ -70,7 +70,12 @@ landscapes = landscapes %>%
   mutate(eco = ifelse(ecoregion == "ALASKA BOREAL INTERIOR", "BI",
                                      ifelse(ecoregion == "BOREAL CORDILLERA", "BC",
                                             ifelse(ecoregion == "TAIGA PLAIN", "TP",
-                                                   ifelse(ecoregion == "TAIGA SHIELD", "TS", "NA")))))
+                                                   ifelse(ecoregion == "TAIGA SHIELD", "TS", "NA"))))) %>%
+  mutate(epsg = ifelse(ecoregion == "ALASKA BOREAL INTERIOR", 3338,
+                                     ifelse(ecoregion == "BOREAL CORDILLERA", 3005,
+                                            ifelse(ecoregion == "TAIGA PLAIN", 3005,
+                                                   ifelse(ecoregion == "TAIGA SHIELD", 3005, "NA"))))) 
+  
 ```
 
 ```{r}
