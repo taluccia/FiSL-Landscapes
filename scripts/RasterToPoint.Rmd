@@ -137,7 +137,70 @@ length(unique(ts$ID1))
 unique(ts$ID2)
 ```
 
+# Rename columns to combine
+```{r}
+(
+  bc = bc %>% 
+    rename(fireID = NFIREID, start = SDATE) 
+)
+```
+
+```{r}
+bc = bc %>%
+    mutate(fireID = as.character(fireID))
+```
+
+```{r}
+( 
+  bi = bi %>% 
+    rename(fireID = Event_ID, start = Ig_Date)
+)
+```
+
+```{r}
+bi = bi %>%
+    mutate(fireID = as.character(fireID))
+```
+
+```{r}
+(
+  tp = tp %>% 
+    rename(fireID = NFIREID, start = SDATE) 
+)
+```
+
+```{r}
+tp = tp %>%
+    mutate(fireID = as.character(fireID))
+```
+```{r}
+( 
+  ts = ts %>% 
+    rename(fireID = NFIREID, start = SDATE) 
+)
+```
+
+```{r}
+ts = ts %>%
+    mutate(fireID = as.character(fireID))
+```
+
+# Combine all
+```{r}
+combineAll = bind_rows(bi, bc, tp, ts)
+```
+
+```{r}
+combineAll = combineAll %>% dplyr::mutate(RID = row_number())
+```
+```{r}
+combineAll
+```
 # Write to shp
+```{r}
+st_write(combineAll, "../outputs/burnPts/FislBurnPtsAllWgs.shp", driver="ESRI Shapefile")
+```
+
 
 ```{r}
 st_write(bi, "../outputs/burnPts/FislBiBurnPtsAllWgs.shp", driver="ESRI Shapefile")
