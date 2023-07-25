@@ -64,7 +64,8 @@ akState = st_read("../data/Boundaries/AlaskaState3338.shp", "AlaskaState3338")
 
 
 ```{r}
-akFires = st_read("../data/Fires/AlaskaFires3338.shp", "AlaskaFires3338")
+BiFires = st_read("../data/burnArea/LBaAk3338.shp", "LBaAk3338")
+canFires = st_read("../data/burnArea/LBaCanf3005.shp", "LBaCanf3005")
 ```
 
 # Select Landscapes for Alaska
@@ -101,8 +102,7 @@ ggplot() +
 
 ```{r}
 ggplot() +
-     geom_sf(data = akState, fill = "#C0C0C0", colour="#A9AB9D") +
-  geom_sf(data = akFires, fill=NA, color = "orange") +
+  geom_sf(data = BiFires, fill=NA, color = "orange") +
   geom_sf(data = ak_landscapes, fill=NA, color = "blue") +
     coord_sf()
 ```
