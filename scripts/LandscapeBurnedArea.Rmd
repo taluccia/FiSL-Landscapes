@@ -41,7 +41,7 @@ unique(Landscapes$ecoregion)
 
 
 
-# Process
+# Burned area within landscapes
 ## For AK
 ```{r}
 bi = Landscapes %>% filter(ecoregion=="ALASKA BOREAL INTERIOR") %>%
@@ -71,6 +71,97 @@ can = Landscapes %>% filter(ecoregion %in% c("BOREAL CORDILLERA", "TAIGA PLAIN",
 ```{r}
 can
 ```
+
+# Full fire perimeters that overlap landscapes
+## For AK
+```{r}
+bifp = Landscapes %>% filter(ecoregion=="ALASKA BOREAL INTERIOR") %>%
+  st_transform(., crs = 3338) %>%
+  st_join( akFires, .) %>% 
+  dplyr::mutate(fireYr = lubridate::year(Ig_Date), 
+                month = lubridate::month(Ig_Date), 
+                day = lubridate::day(Ig_Date)) %>%
+  filter(fireYr>= 2000) %>%
+  drop_na(ID)
+```
+
+```{r}
+bifp
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = bifp, fill=NA, color = "orange") +
+  geom_sf(data = Landscapes, fill=NA, color = "blue") +
+    coord_sf()
+```
+## For Canada
+```{r}
+canfp = Landscapes %>% filter(ecoregion %in% c("BOREAL CORDILLERA", "TAIGA PLAIN", "TAIGA SHIELD" )) %>%
+  st_transform(., crs = 3005) %>%
+  st_join( CanFires, .) %>% 
+  dplyr::mutate(fireYr = lubridate::year(SDATE), 
+                month = lubridate::month(SDATE), 
+                day = lubridate::day(SDATE)) %>%
+  filter(fireYr>= 2000) %>%
+  drop_na(ID)
+```
+
+```{r}
+canfp
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = canfp, fill=NA, color = "orange") +
+  geom_sf(data = Landscapes, fill=NA, color = "blue") +
+    coord_sf()
+```
+
+# Reproject to 4326
+
+```{r}
+
+akFires = st_transform(bifp, crs = 4326)
+CanFires = st_transform(canfp, crs = 4326)
+
+```
+
+```{r}
+allFP = bind_rows(akFires, CanFires) 
+```
+
+```{r}
+( 
+  allFP = allFP %>% 
+    mutate(eco = ifelse(ecoregion == "ALASKA BOREAL INTERIOR", "BI",
+                                     ifelse(ecoregion == "BOREAL CORDILLERA", "BC",
+                                            ifelse(ecoregion == "TAIGA PLAIN", "TP",
+                                                   ifelse(ecoregion == "TAIGA SHIELD", "TS", "NA"))))) %>%
+    mutate(ID2=fireYr)
+)
+```
+
+```{r}
+allFP %>%
+  st_drop_geometry() %>%
+  group_by(eco, ID2) %>%
+  summarize(n = n())
+```
+
+BC == 2004, 2009, 2010, 2011, 2013, 2021, 
+BI == 2000, 2002, 2005, 2009, 2010, 2013, 2015, 2016, 2017
+TP == 2004, 2007, 2012, 2013, 2014, 2015, 2018
+TS == 2004, 2008, 2010, 2013, 2014, 2015, 2016, 2017, 2019
+
+```{r}
+allFP %>%
+  st_drop_geometry() %>%
+  group_by(eco, ID2) %>%
+  summarize(n = n())
+```
+
+
 # write  to shp
 
 ```{r eval=FALSE, include=FALSE}
@@ -82,6 +173,13 @@ st_write(can, "../outputs/burnArea/LBaCanf3005.shp", driver="ESRI Shapefile")
 ```
 
 
+```{r eval=FALSE, include=FALSE}
+st_write(bifp, "../outputs/burnArea/LPerimetersAk3338.shp", driver="ESRI Shapefile")
+```
+
+```{r eval=FALSE, include=FALSE}
+st_write(allFP, "../outputs/burnArea/LSFPerimetersWGS84.shp", driver="ESRI Shapefile")
+```
 
 
 
