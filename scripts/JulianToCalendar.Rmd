@@ -8,6 +8,7 @@ output: html_document
 # Overview
 Take Day of Burn julian day can convert to YYYY-MM-DD
 
+Input data is from Earth Engine output
 
 # Library
 ```{r}
@@ -21,16 +22,17 @@ library(vroom)
 ## Shapefile
 
 ```{r}
-pts = st_read("../data/burnPts/FislAkBiBurnPtsAllWgs.shp", "FislAkBiBurnPtsAllWgs")
+pts = st_read("../data/burnPts/FislBurnPtsAllWgs.shp", "FislBurnPtsAllWgs")
 ```
 ```{r}
-pts
+pts1 = pts %>%
+  dplyr::select(ID1, geometry)
 ```
 ## DoB
 # vector of data files
 
 ```{r}
-f <- list.files(path = "../data/DayOfBurn/Ak/", pattern = "*.csv", full.names = TRUE)
+f <- list.files(path = "../data/DayOfBurn/", pattern = "*.csv", full.names = TRUE)
 allData = vroom::vroom(f)
 ```
 
@@ -38,38 +40,31 @@ allData = vroom::vroom(f)
 allData
 ```
 
-```{r}
-oneData = read_csv("../data/DayOfBurn/Ak/LsDoBAK2000.csv")
-```
 
-```{r}
-oneData
-```
+
 # add Date as string
 ```{r}
-data1 = allData %>% 
+( allData1 = allData %>% 
   mutate(yyyymmdd = as.Date(DoB, origin = as.Date(paste0(ID2,"-01-01")))) %>%
-  dplyr::select(DoB:ptID, yyyymmdd) %>%
-  mutate(Date = as.character(yyyymmdd)) %>% 
-  dplyr::select(ptID, DoB, yyyymmdd, Date) %>%
-  left_join(., pts, by = join_by(ptID)) %>%
-  rename(DOB_Ist = DoB, FIREID=Event_ID) %>%
-  dplyr::select(ID, ID2, DOB_Ist, Date, FIREID, lat, lon, ptID, geometry) 
-
-
-
-
-
+  dplyr::select(DoB:start, yyyymmdd) %>%
+  mutate(Date = as.character(yyyymmdd)) %>%
+  left_join(., pts1, by = join_by(ID1)) %>%
+  rename(DOB_Ist = DoB) %>%
+    st_as_sf() %>%
+    dplyr::select(DOB_Ist:eco, Date, geometry)
+)
 ```
+
+
 
 # Get calendar date
 with quotes and separated by comma to add to GEE code.
 
 ```{r}
-cat(paste0(sprintf("'%s'", unique(data1$Date)), collapse = ", "))
+cat(paste0(sprintf("'%s'", sort(unique(allData1$Date))), collapse = ", "))
 ```
 
 # Save pt shp file
-```{r eval=FALSE, include=FALSE}
-st_write(data1, "../outputs/DoBpts/FislAKDoBpts.shp", driver="ESRI Shapefile")
+```{r}
+st_write(allData1, "../outputs/DoBpts/FislDoBpts.shp", driver="ESRI Shapefile")
 ```
