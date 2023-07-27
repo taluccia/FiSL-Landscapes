@@ -1,0 +1,63 @@
+---
+title: "Format Data for Climate NA"
+author: "Anna Talucci"
+date: "2023-07-26"
+output: html_document
+---
+
+# Overview format data for Climate NA
+
+Columns needed 
+id1, id2, lat, long, elev
+
+
+# Library
+```{r}
+library(tidyverse)
+library(sf)
+library(vroom)
+```
+
+
+# Data
+## Shapefile
+
+```{r}
+pts = st_read("../data/burnPts/FislBurnPtsAllWgs.shp", "FislBurnPtsAllWgs")
+```
+```{r}
+pts1 = pts %>%
+  dplyr::select(ID1, geometry)
+```
+## DoB
+# vector of data files
+
+```{r}
+f <- list.files(path = "../data/elevation/", pattern = "*.csv", full.names = TRUE)
+allData = vroom::vroom(f)
+```
+```{r}
+sort(unique(allData$ID))
+```
+
+# By Landscape
+1249 1800 1889 1891 1982 3952 4049 4139 4219 4220 5938 5939 6393 6755 8301 8392 8937 9664
+```{r}
+( df = allData %>% 
+  dplyr::select(ID, ID1, ID2, lat, lon, elevation) %>%
+  rename(id1=ID1, id2=ID2, lat=lat, long=lon, elev=elevation) )
+```
+```{r}
+(mdf = split(df, f = df$ID) )
+```
+```{r}
+names(mdf)     
+```
+write.csv(na_s[[x]],file = paste('./na_s_daily/','na_',names (na_s[x]),'.csv',sep=""), row.names = F)
+}
+```{r}
+lapply(1:length(mdf), function(i) write.csv(mdf[[i]], 
+                                      file = paste0("../outputs/climateNA/", names(mdf[i]), ".csv"),
+                                      row.names = FALSE))
+```
+
