@@ -35,11 +35,39 @@ points %>% st_drop_geometry() %>% group_by(eco, ID2, N) %>% summarize(n=n())
 ```
 
 ```{r}
-df = points %>% st_drop_geometry() %>% filter(eco=="TS") %>% filter(ID2==2017) 
+ts2017 = points %>% st_drop_geometry() %>% filter(eco=="TS") %>% filter(ID2==2017) 
 ```
 
 ```{r}
-min(df$RID)
-quantile(df$RID)
-max(df$RID)
+min(ts2017$RID)
+quantile(ts2017$RID)
+max(ts2017$RID)
+```
+```{r}
+(2791164-2521535)/2
+```
+
+```{r}
+2791164 -134814.5
+```
+
+
+```{r}
+bi2017 = points %>% st_drop_geometry() %>% filter(eco=="BI") %>% filter(ID2==2017) 
+```
+
+```{r}
+min(bi2017$RID)
+quantile(bi2017$RID)
+max(bi2017$RID)
+```
+
+```{r}
+bi2013 = points %>% st_drop_geometry() %>% filter(eco=="BI") %>% filter(ID2==2013) 
+```
+
+```{r}
+min(bi2013$RID)
+quantile(bi2013$RID)
+max(bi2013$RID)
 ```
