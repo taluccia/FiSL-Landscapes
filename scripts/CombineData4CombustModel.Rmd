@@ -1,0 +1,278 @@
+---
+title: "Combine Data for Combustion Model"
+author: "Anna Talucci"
+date: "2023-08-03"
+output: html_document
+---
+
+
+# Overview
+ For 20 landscapes clean and combine data for combustion model.
+
+# Librarys
+```{r}
+library(tidyverse)
+```
+
+# Data
+
+## FWI
+## List of rasters
+```{r}
+fwi <- list.files(path="../data/LandscapeData/fwi",pattern='*.csv', full.names = TRUE) %>% purrr::map(., read_csv) %>% bind_rows ()
+```
+
+```{r}
+fwi 
+```
+
+## Landsat
+### Veg
+```{r}
+veg =  list.files(path="../data/LandscapeData/LandsatVeg",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  map_dfr(., ~ .x %>%
+        mutate(across(fireID, as.character))) %>%
+  bind_rows ()
+```
+```{r}
+veg
+```
+
+### TCT
+```{r}
+tct =  list.files(path="../data/LandscapeData/landsatTCT",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  map_dfr(., ~ .x %>%
+        mutate(across(fireID, as.character))) %>%
+  bind_rows ()
+```
+
+```{r}
+tct
+```
+
+
+
+## Static
+### Terrain
+```{r}
+terrain =  list.files(path="../data/LandscapeData/staticTerrain",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  map_dfr(., ~ .x %>%
+        mutate(across(fireID, as.character))) %>%
+  bind_rows ()
+```
+
+```{r}
+terrain 
+```
+
+### veg
+```{r}
+sveg =  list.files(path="../data/LandscapeData/staticVeg",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  map_dfr(., ~ .x %>%
+        mutate(across(fireID, as.character))) %>%
+  bind_rows ()
+```
+
+```{r}
+sveg 
+```
+
+## Tree Cover
+```{r}
+treecover =  list.files(path="../data/LandscapeData/treeCover",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  map_dfr(., ~ .x %>%
+        mutate(across(fireID, as.character))) %>%
+  bind_rows ()
+```
+
+```{r}
+treecover 
+```
+
+
+## Climate NA
+
+## DELETE!!?!?!?!??!
+```{r}
+static =  read.csv("../data/Landscape1/Static/static_test.csv", header=TRUE, sep = ",", strip.white = TRUE)
+```
+
+```{r}
+terrain =  read.csv("../data/Landscape1/Static/Static_terrain.csv", header=TRUE, sep = ",", strip.white = TRUE)
+```
+
+```{r}
+veg =  read.csv("../data/Landscape1/Static/static_vegetation_3338.csv", header=TRUE, sep = ",", strip.white = TRUE)
+```
+
+```{r}
+static
+```
+
+```{r}
+veg
+```
+
+```{r}
+terrain
+```
+
+
+## Climate NA
+```{r}
+cna =  read.csv("../data/Landscape1/CNA/Landscape1CLimateNAData2.csv", header=TRUE, sep = ",", strip.white = TRUE)
+```
+
+```{r}
+head(cna)
+```
+
+# Select columns 
+## Static
+```{r}
+terrain_veg = full_join(terrain, veg, by = c("ID1", "ID2", "FIREID", "NAME", "lat", "lon")) %>%
+  dplyr::select(-system.index.x, -.geo.x, -system.index.y, -.geo.y)
+```
+
+```{r}
+static
+```
+```{r}
+static1 = static %>% 
+  dplyr::select(-system.index, -Ruggedness, -key, -.geo) 
+```
+
+```{r}
+static2 = full_join(static1, terrain_veg, by = c("ID1", "ID2", "FIREID", "NAME", "lat", "lon")) 
+
+static2
+```
+
+## landsat
+```{r}
+landsat1 = landsat %>% 
+  dplyr::select(FIREID:wetness) 
+
+landsat1
+```
+
+```{r}
+landsat %>%
+  dplyr::select(ID1, ID2, lat, lon) %>%
+  write_csv(., "../outputs/ID1ID2LatLon.csv")
+```
+## FWI
+```{r}
+fwi1 = fwi_bind %>% 
+  dplyr::select(BUI:wspeed)  
+```
+
+```{r}
+fwi1 %>% dplyr::select(ID1, ID2, lat, lon) %>% write_csv(., "../outputs/Landscape1ForCNAFromFWI.csv")
+```
+
+
+
+
+# Check number of IDs
+```{r}
+length(unique(landsat1$ID1))
+length(unique(static2$ID1))
+length(unique(fwi1$ID1))
+length(unique(cna$ID1))
+```
+
+```{r}
+length(unique(landsat1$ID2))
+length(unique(static2$ID2))
+length(unique(fwi1$ID2))
+length(unique(cna$ID2))
+```
+# head
+```{r}
+fwi1
+```
+
+# Combine to figure out join issue with CNA
+tibble::rowid_to_column(data, "ID")
+```{r}
+static_landsat = full_join(static2, landsat1, by = c("ID1", "ID2", "FIREID", "NAME", "lat", "lon")) 
+
+static_landsat
+```
+
+```{r}
+static_landsat_fwi = full_join(static_landsat, fwi1, by = c("ID1", "ID2", "FIREID", "NAME", "lat", "lon")) 
+
+static_landsat_fwi
+```
+
+
+```{r}
+df_for_cna1 = tibble::rowid_to_column(static_landsat_fwi, "ID") %>% 
+  rename(ID1 = ID, UniqueID = ID1) 
+
+df_for_cna2 = df_for_cna1 %>% 
+  dplyr::select(ID1, ID2, lat, lon, elevation)
+```
+
+# Write to csv
+```{r eval=FALSE, include=FALSE}
+write_csv(df_for_cna, "../outputs/Landscape1DFforCNA.csv")
+```
+
+# Add CNA
+
+```{r}
+static_landsat_fwi_cna = full_join(df_for_cna1, cna, by = c("ID1")) 
+
+static_landsat_fwi_cna
+```
+
+```{r}
+static_landsat_fwi_cna
+```
+# Select only data of interest to predict
+## For above
+```{r}
+model_data = static_landsat_fwi_cna %>% 
+  rename(DOB_lst=DOB_Ist, Relative.humidity=rh, Temperature=t, Tree.cover=tree_canopy_cover, Wind.speed=wspeed,VPD = vpd, burn_year=ID2.x, lat= lat.x, lon=lon.x) %>%
+  dplyr::select(-ID2.y,-lat.y, -lon.y )
+
+model_data
+
+```
+
+```{r}
+write_csv(model_data, "../outputs/Landscape1DataForCombustionModel.csv")
+```
+%>%
+  dplyr::select(ID1, ID2, NAME, FIREID, UniqueID, lat, lon, BD_30, brightness, BS, BUI, Clay_30, CNA_AHM, CNA_CMD, CNA_CMD_5_8, CNA_DD_0, CNA_DD_18, CNA_DD5, CNA_DD5_5_8, CNA_EMT, CNA_Eref, CNA_Eref_5_8, CNA_EXT, CNA_MAP, CNA_PAS, CNA_Rad_5_8, CNA_SHM, CNA_Tmin_5_8, DC, DEC, DMC, dNBR, DOB_lst, elevation, FFMC, greenness, JP, NDII, NDVI, NV, PFI, pH_30, rbr, rdnbr, Relative.humidity, Ruggedness, Sand_30, Silt_30, slope, SOC_30, Temperature, Tree.cover, wetness, Wind.speed, WS)
+## For Below
+```{r}
+below = static_landsat_fwi_cna %>% 
+  rename(DOB_lst=DOB_Ist, Relative.humidity=rh, Temperature=t, Tree.cover=tree_canopy_cover, Wind.speed=wspeed, ID2=ID2.x, lat= lat.x, lon=lon.x) 
+
+
+below
+```
+%>%
+  dplyr::select(ID1, ID2, NAME, FIREID, UniqueID, lat, lon, BD_30, brightness, BS, BUI, Clay_30, CNA_AHM, CNA_CMD, CNA_CMD_5_8, CNA_DD_0, CNA_DD_18, CNA_DD5, CNA_DD5_5_8, CNA_EMT, CNA_Eref, CNA_Eref_5_8, CNA_EXT, CNA_MAP, CNA_PAS, CNA_Rad_5_8, CNA_SHM, CNA_Tmax_5_8, CNA_Tmin_5_8, DC, DEC, DMC, dNBR, DOB_lst, elevation, FFMC, greenness, JP, NDII, NDVI, NV, PFI, pH_30, rbr, rdnbr, Relative.humidity, Ruggedness, Sand_30, Silt_30, slope, SOC_30, Tree.cover, wetness, Wind.speed, WS)
+
+# Write to csv
+```{r}
+write_csv(above, "../outputs/Landscape1DataForCombustionModelABOVE.csv")
+```
+```{r}
+write_csv(below, "../outputs/Landscape1DataForCombustionModelBELOW.csv")
+```
+
+```{r}
+write_csv(static_landsat_fwi_cna, "../outputs/Landscape1DataForCombustionModel.csv")
+```
+**THE END**
