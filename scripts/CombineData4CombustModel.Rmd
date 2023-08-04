@@ -19,7 +19,11 @@ library(tidyverse)
 ## FWI
 ## List of rasters
 ```{r}
-fwi <- list.files(path="../data/LandscapeData/fwi",pattern='*.csv', full.names = TRUE) %>% purrr::map(., read_csv) %>% bind_rows ()
+fwi <- list.files(path="../data/LandscapeData/fwi",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  bind_rows() %>%
+  dplyr::select(BUI:wspeed) %>%
+  rename(DOB_lst=DOB_Ist, Relative.humidity=rh, Temperature=t, Wind.speed=wspeed,VPD = vpd,) 
 ```
 
 ```{r}
@@ -33,7 +37,8 @@ veg =  list.files(path="../data/LandscapeData/LandsatVeg",pattern='*.csv', full.
   purrr::map(., read_csv) %>% 
   map_dfr(., ~ .x %>%
         mutate(across(fireID, as.character))) %>%
-  bind_rows ()
+  bind_rows() %>%
+  dplyr::select(ID:rdnbr)
 ```
 ```{r}
 veg
@@ -45,15 +50,33 @@ tct =  list.files(path="../data/LandscapeData/landsatTCT",pattern='*.csv', full.
   purrr::map(., read_csv) %>% 
   map_dfr(., ~ .x %>%
         mutate(across(fireID, as.character))) %>%
-  bind_rows ()
+  bind_rows() %>% 
+  dplyr::select(ID1:ID2, brightness, fireID:greenness, wetness)
 ```
 
 ```{r}
 tct
 ```
 
+## Tree Cover
+```{r}
+treecover =  list.files(path="../data/LandscapeData/treeCover",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  map_dfr(., ~ .x %>%
+        mutate(across(fireID, as.character))) %>%
+  bind_rows() %>%
+  dplyr::select(ID1, ID2, fireID, tree_canopy_cover) %>%
+  rename(Tree.cover=tree_canopy_cover) 
+```
 
+```{r}
+treecover 
+```
 
+```{r}
+( landsat = full_join(veg, tct, by = c("ID1", "ID2", "fireID")) %>%
+    full_join(., treecover, by = c("ID1", "ID2", "fireID")))
+```
 ## Static
 ### Terrain
 ```{r}
@@ -61,7 +84,8 @@ terrain =  list.files(path="../data/LandscapeData/staticTerrain",pattern='*.csv'
   purrr::map(., read_csv) %>% 
   map_dfr(., ~ .x %>%
         mutate(across(fireID, as.character))) %>%
-  bind_rows ()
+  bind_rows() %>%
+  dplyr::select(ID:start)
 ```
 
 ```{r}
@@ -74,140 +98,75 @@ sveg =  list.files(path="../data/LandscapeData/staticVeg",pattern='*.csv', full.
   purrr::map(., read_csv) %>% 
   map_dfr(., ~ .x %>%
         mutate(across(fireID, as.character))) %>%
-  bind_rows ()
+  bind_rows() %>%
+  dplyr::select(BS:GRSH, ID1:OCON, WS, fireID)
 ```
 
 ```{r}
 sveg 
 ```
 
-## Tree Cover
 ```{r}
-treecover =  list.files(path="../data/LandscapeData/treeCover",pattern='*.csv', full.names = TRUE) %>% 
+( static = full_join(terrain, sveg, by = c("ID1", "ID2", "fireID")) )
+```
+
+
+
+
+## Climate NA
+
+```{r}
+climateNA =  list.files(path="../data/LandscapeData/climateNA",pattern='*.csv', full.names = TRUE) %>% 
   purrr::map(., read_csv) %>% 
-  map_dfr(., ~ .x %>%
-        mutate(across(fireID, as.character))) %>%
-  bind_rows ()
+  bind_rows() %>%
+  dplyr::select(id1:Elevation, AHM, CMD, CMD_sm, DD_0, DD_18, DD5, DD5_sm, EMT, Eref, Eref_sm, EXT, MAP, PAS, Rad_sm, SHM, Tmax_sm, Tmin_sm) %>%
+  rename(ID1=id1, ID2=id2, lat=Latitude, lon=Longitude, elevation = Elevation, CNA_AHM=AHM, CNA_CMD=CMD, CNA_CMD_5_8 = CMD_sm, CNA_DD_0=DD_0, CNA_DD_18=DD_18, CNA_DD5=DD5, CNA_DD5_5_8=DD5_sm, CNA_EMT=EMT, CNA_Eref=Eref, CNA_Eref_5_8=Eref_sm, CNA_EXT=EXT, CNA_MAP=MAP, CNA_PAS=PAS, CNA_Rad_5_8=Rad_sm, CNA_SHM=SHM, CNA_Tmax_5_8=Tmax_sm, CNA_Tmin_5_8=Tmin_sm)
 ```
 
 ```{r}
-treecover 
+climateNA 
 ```
 
 
-## Climate NA
-
-## DELETE!!?!?!?!??!
-```{r}
-static =  read.csv("../data/Landscape1/Static/static_test.csv", header=TRUE, sep = ",", strip.white = TRUE)
-```
-
-```{r}
-terrain =  read.csv("../data/Landscape1/Static/Static_terrain.csv", header=TRUE, sep = ",", strip.white = TRUE)
-```
-
-```{r}
-veg =  read.csv("../data/Landscape1/Static/static_vegetation_3338.csv", header=TRUE, sep = ",", strip.white = TRUE)
-```
-
-```{r}
-static
-```
-
-```{r}
-veg
-```
-
-```{r}
-terrain
-```
 
 
-## Climate NA
-```{r}
-cna =  read.csv("../data/Landscape1/CNA/Landscape1CLimateNAData2.csv", header=TRUE, sep = ",", strip.white = TRUE)
-```
+CNA_AHM, CNA_CMD, CNA_CMD_5_8, CNA_DD_0, CNA_DD_18, CNA_DD5, CNA_DD5_5_8, CNA_EMT, CNA_Eref, CNA_Eref_5_8, CNA_EXT, CNA_MAP, CNA_PAS, CNA_Rad_5_8, CNA_SHM, CNA_Tmax_5_8, CNA_Tmin_5_8,
 
-```{r}
-head(cna)
-```
 
-# Select columns 
-## Static
-```{r}
-terrain_veg = full_join(terrain, veg, by = c("ID1", "ID2", "FIREID", "NAME", "lat", "lon")) %>%
-  dplyr::select(-system.index.x, -.geo.x, -system.index.y, -.geo.y)
-```
 
-```{r}
-static
-```
-```{r}
-static1 = static %>% 
-  dplyr::select(-system.index, -Ruggedness, -key, -.geo) 
-```
 
-```{r}
-static2 = full_join(static1, terrain_veg, by = c("ID1", "ID2", "FIREID", "NAME", "lat", "lon")) 
-
-static2
-```
-
-## landsat
-```{r}
-landsat1 = landsat %>% 
-  dplyr::select(FIREID:wetness) 
-
-landsat1
-```
-
-```{r}
-landsat %>%
-  dplyr::select(ID1, ID2, lat, lon) %>%
-  write_csv(., "../outputs/ID1ID2LatLon.csv")
-```
-## FWI
-```{r}
-fwi1 = fwi_bind %>% 
-  dplyr::select(BUI:wspeed)  
-```
-
-```{r}
-fwi1 %>% dplyr::select(ID1, ID2, lat, lon) %>% write_csv(., "../outputs/Landscape1ForCNAFromFWI.csv")
-```
 
 
 
 
 # Check number of IDs
 ```{r}
-length(unique(landsat1$ID1))
-length(unique(static2$ID1))
-length(unique(fwi1$ID1))
-length(unique(cna$ID1))
+length(unique(landsat$ID1))
+length(unique(static$ID1))
+length(unique(fwi$ID1))
+length(unique(climateNA$ID1))
 ```
 
 ```{r}
-length(unique(landsat1$ID2))
-length(unique(static2$ID2))
-length(unique(fwi1$ID2))
-length(unique(cna$ID2))
-```
-# head
-```{r}
-fwi1
+length(unique(landsat$ID2))
+length(unique(static$ID2))
+length(unique(fwi$ID2))
+length(unique(climateNA$ID2))
 ```
 
-# Combine to figure out join issue with CNA
+
+
+# Combine to Datasets
 tibble::rowid_to_column(data, "ID")
+full_join(terrain, sveg, by = c("ID1", "ID2", "fireID")) )
 ```{r}
-static_landsat = full_join(static2, landsat1, by = c("ID1", "ID2", "FIREID", "NAME", "lat", "lon")) 
+static_landsat = full_join(static, landsat, by = c("ID1", "ID2", "fireID", "lat", "lon")) 
 
 static_landsat
 ```
 
 ```{r}
-static_landsat_fwi = full_join(static_landsat, fwi1, by = c("ID1", "ID2", "FIREID", "NAME", "lat", "lon")) 
+static_landsat_fwi = full_join(static_landsat, fwi1, by = c("ID1", "ID2", "fireID", "lat", "lon")) 
 
 static_landsat_fwi
 ```
@@ -221,22 +180,7 @@ df_for_cna2 = df_for_cna1 %>%
   dplyr::select(ID1, ID2, lat, lon, elevation)
 ```
 
-# Write to csv
-```{r eval=FALSE, include=FALSE}
-write_csv(df_for_cna, "../outputs/Landscape1DFforCNA.csv")
-```
 
-# Add CNA
-
-```{r}
-static_landsat_fwi_cna = full_join(df_for_cna1, cna, by = c("ID1")) 
-
-static_landsat_fwi_cna
-```
-
-```{r}
-static_landsat_fwi_cna
-```
 # Select only data of interest to predict
 ## For above
 ```{r}
