@@ -1,0 +1,199 @@
+---
+title: "Combustion Model"
+author: "Anna Talucci"
+date: '2023-08-03'
+output: html_document
+---
+
+# Overview
+
+Trouble shooting
+https://stackoverflow.com/questions/30097730/error-when-using-predict-on-a-randomforest-object-trained-with-carets-train
+
+# Library
+```{r}
+library(tidyverse)
+library(ranger)
+library(e1071)
+library(arrow)
+```
+# Models
+```{r}
+above_model <- readRDS("../models/aboveground.rds")
+below_model <- readRDS("../models/belowgrounds.rds")
+depth_model <- readRDS("../models/burn_depth.rds")
+```
+
+
+
+# Landscape 1 Data
+```{r eval=FALSE, include=FALSE}
+landscape1_above = read.csv("../data/Landscape1/CombustionModel/Landscape1DataForCombustionModelABOVE.csv")
+```
+
+```{r eval=FALSE, include=FALSE}
+landscape1_below = read.csv("../data/Landscape1/CombustionModel/Landscape1DataForCombustionModelBELOW.csv")
+```
+
+```{r eval=FALSE, include=FALSE}
+l1_modeldata = read.csv("../data/Landscape1/CombustionModel/Landscape1DataForCombustionModel.csv")
+```
+```{r eval=FALSE, include=FALSE}
+landscape1_above
+landscape1_below
+```
+
+# Landscapes (20) Data
+```{r}
+landscapeData1 = read.csv("../data/landscape20ModelData/Landscape20DataCombustionModel.csv")
+```
+```{r}
+landscapeData2 = read.csv("../data/landscape20ModelData/L20DataBurnDateCombustionModel.csv")
+```
+
+```{r}
+landscapeData = landscapeData2
+```
+
+```{r}
+head(landscapeData)
+```
+
+# Read in predictive data from stefano
+```{r}
+abovefed <- read_parquet("../data/TrainingDataFrame/abovefed_for_predict.parquet")
+head(abovefed)
+```
+
+# Training Data
+Original model training data.
+```{r}
+above_train =  read.csv("../data/TrainingDataFrame/aboveground.csv", header=TRUE, sep = ",", strip.white = TRUE)
+```
+
+```{r}
+below_train =  read.csv("../data/TrainingDataFrame/belowground.csv", header=TRUE, sep = ",", strip.white = TRUE)
+```
+
+```{r}
+above_importance =  read.csv("../data/TrainingDataFrame/aboveground_importance.csv", header=TRUE, sep = ",", strip.white = TRUE)
+```
+
+```{r}
+below_importance =  read.csv("../data/TrainingDataFrame/belowground_importance.csv", header=TRUE, sep = ",", strip.white = TRUE)
+```
+
+# Check with AboveFed Training data
+```{r}
+setdiff(names(abovefed), names(landscapeData))
+```
+
+```{r}
+setdiff(names(below_train), names(landscapeData))
+```
+
+```{r}
+setdiff(names(above_train), names(landscapeData))
+```
+
+```{r}
+setdiff(names(above_train), names(below_train))
+```
+```{r}
+setdiff(below_importance$Variables, names(landscapeData))
+```
+
+```{r}
+setdiff(above_importance$Variables, names(landscapeData))
+```
+
+```{r}
+below_importance
+```
+
+#select only importance variables and add column for combustion for training
+```{r}
+above_train2 <- above_train %>% select(above_importance$Variables)
+below_train2 <- below_train %>% select(below_importance$Variables)
+above_train2$above.carbon.combusted = above_train$above.carbon.combusted
+below_train2$below.ground.carbon.combusted = below_train$below.ground.carbon.combusted
+```
+
+
+# Training models 
+
+Training each model with optimized parameters from Stefano's ABOVEFed Model
+```{r}
+model_ranger_above <- ranger(above.carbon.combusted ~., data = above_train2, mtry = above_model$bestTune$mtry, splitrule = above_model$bestTune$splitrule, min.node.size = above_model$bestTune$min.node.size)
+```
+
+```{r}
+model_ranger_below <- ranger(below.ground.carbon.combusted ~., data = below_train2, mtry = below_model$bestTune$mtry, splitrule = below_model$bestTune$splitrule, min.node.size = below_model$bestTune$min.node.size)
+```
+
+```{r}
+rownames(below_model$importance)
+below_model$bestTune$splitrule
+below_model$bestTune$mtry
+below_model$bestTune$min.node.size
+```
+
+
+
+# Predict combustion with all independent variables
+These predictive models use all independent variables.
+
+## Drop NA
+```{r}
+( landscapes = landscapeData %>% drop_na() )
+```
+## select variables of interest
+```{r}
+( landscapesAbove = landscapes %>% select(above_importance$Variables) )
+( landscapesBelow = landscapes %>% select(below_importance$Variables) )
+```
+
+## Aboveground preditions 
+```{r}
+pred_above = predict(model_ranger_above, landscapesAbove)
+```
+
+```{r}
+AbovepredResults <- data.frame(predict(model_ranger_above, landscapesAbove))
+AbovepredResults
+```
+
+```{r}
+above_pred <- cbind(landscapes, AbovepredResults)
+above_pred
+```
+
+```{r eval=FALSE, include=FALSE}
+write_csv(above_pred, "../outputs/PredictLandscapes/AbovegroundCombustion.csv")
+```
+
+```{r eval=FALSE, include=FALSE}
+write_csv(above_pred, "../outputs/PredictLandscapes/BurnDateAbovegroundCombustion.csv")
+```
+## Below Combustion
+ 
+```{r}
+pred_below = predict(model_ranger_below, landscapesBelow)
+```
+
+```{r}
+BelowpredResults <- data.frame(predict(model_ranger_below, landscapesBelow))
+
+```
+
+```{r}
+below_pred <- cbind(landscapes, BelowpredResults)
+```
+
+```{r eval=FALSE, include=FALSE}
+write_csv(below_pred, "../outputs/PredictLandscapes/BelowgroundCombustion.csv")
+```
+
+```{r eval=FALSE, include=FALSE}
+write_csv(below_pred, "../outputs/PredictLandscapes/BurnDateBelowgroundCombustion.csv")
+```

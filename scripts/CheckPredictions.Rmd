@@ -1,0 +1,219 @@
+---
+title: "Check Predictions with AboveFed"
+author: "Anna Talucci"
+date: "2023-08-15"
+output: html_document
+---
+
+
+# Packages
+```{r}
+library(sf)
+library(tidyverse)
+```
+
+## predictions
+```{r}
+above = read.csv("../data/PredictLandscapes/BurnDateAbovegroundCombustion.csv") %>% 
+  dplyr::select(ID, ID1, ID2, lat, lon, prediction) %>% 
+  rename(above = prediction)
+```
+
+```{r}
+below = read.csv("../data/PredictLandscapes/BurnDateBelowgroundCombustion.csv") %>% 
+  dplyr::select(ID, ID1, ID2, lat, lon, prediction) %>% 
+  rename(below = prediction)
+```
+
+## abvove Fed
+```{r}
+afBi =  list.files(path="../data/PredictLandscapes/AboveFed/BI",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  bind_rows() %>%
+  dplyr::select(ID1, b1, b2)
+```
+
+```{r}
+afBc =  list.files(path="../data/PredictLandscapes/AboveFed/BC",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  bind_rows() %>%
+  dplyr::select(ID1, b1, b2)
+```
+
+
+```{r}
+afTp =  list.files(path="../data/PredictLandscapes/AboveFed/TP",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  bind_rows() %>%
+  dplyr::select(ID1, b1, b2)
+```
+
+```{r}
+afTs =  list.files(path="../data/PredictLandscapes/AboveFed/TS",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  bind_rows() %>%
+  dplyr::select(ID1, b1, b2)
+```
+
+```{r eval=FALSE, include=FALSE}
+x = read.csv("../data/PredictLandscapes/AboveFedPixBI2010.csv")
+```
+
+```{r eval=FALSE, include=FALSE}
+head(above)
+head(below)
+head(af)
+```
+
+```{r eval=FALSE, include=FALSE}
+subsetabove = above %>% filter(eco=="BI") %>% filter(ID2==2010) 
+subsetbelow = below %>% filter(eco=="BI") %>% filter(ID2==2010) 
+```
+
+```{r}
+afBc = afBc %>% dplyr::select(ID1, b1, b2) 
+afBi = afBi %>% dplyr::select(ID1, b1, b2) 
+afTp = afTp %>% dplyr::select(ID1, b1, b2) 
+afTs = afTs %>% dplyr::select(ID1, b1, b2) 
+```
+
+```{r eval=FALSE, include=FALSE}
+subsetabove
+subsetbelow
+```
+
+```{r}
+predict = full_join(above, below, by=c('ID', 'ID1', 'ID2', 'lat', 'lon'))
+```
+
+```{r}
+afPredBc = full_join(predict, afBc, by="ID1") %>% drop_na(b1) %>% drop_na(b2)
+afPredBi = full_join(predict, afBi, by="ID1") %>% drop_na(b1) %>% drop_na(b2)
+afPredTp = full_join(predict, afTp, by="ID1") %>% drop_na(b1) %>% drop_na(b2)
+afPredTs = full_join(predict, afTs, by="ID1") %>% drop_na(b1) %>% drop_na(b2)
+```
+
+```{r}
+( 
+  diffBc = afPredBc %>% 
+  mutate(diffAbove = as.numeric(above-b1)) %>%
+  mutate(diffBelow = as.numeric(below-b2))
+)
+```
+
+```{r}
+( 
+  diffBi = afPredBi %>% 
+  mutate(diffAbove = as.numeric(above-b1)) %>%
+  mutate(diffBelow = as.numeric(below-b2))
+)
+```
+
+```{r}
+( 
+  diffTp = afPredTp %>% 
+  mutate(diffAbove = as.numeric(above-b1)) %>%
+  mutate(diffBelow = as.numeric(below-b2))
+)
+```
+
+```{r}
+( 
+  diffTs = afPredTs %>% 
+  mutate(diffAbove = as.numeric(above-b1)) %>%
+  mutate(diffBelow = as.numeric(below-b2))
+)
+```
+
+
+```{r}
+
+( 
+  summarizeAboveBc =  diffBc %>%
+  summarize(diffAmean = mean(diffAbove, na.rm = TRUE), 
+            diffAmedian = median(diffAbove, na.rm = TRUE), 
+            diffAsd=sd(diffAbove, na.rm = TRUE),
+            diffAmin = min(diffAbove, na.rm = TRUE), 
+            diffAmax = max(diffAbove, na.rm = TRUE))
+)
+```
+
+```{r}
+(
+  summarizeBelowBc =  diffBc %>%
+  summarize(diffBmean = mean(diffBelow, na.rm = TRUE), 
+            diffBmedian = median(diffBelow, na.rm = TRUE), 
+            diffBsd=sd(diffBelow, na.rm = TRUE),
+            diffBmin = min(diffBelow, na.rm = TRUE), 
+            diffBmax = max(diffBelow, na.rm = TRUE))
+)
+```
+
+```{r}
+
+( 
+  summarizeAboveBi =  diffBi %>%
+  summarize(diffAmean = mean(diffAbove, na.rm = TRUE), 
+            diffAmedian = median(diffAbove, na.rm = TRUE), 
+            diffAsd=sd(diffAbove, na.rm = TRUE),
+            diffAmin = min(diffAbove, na.rm = TRUE), 
+            diffAmax = max(diffAbove, na.rm = TRUE))
+)
+```
+
+```{r}
+(
+  summarizeBelowBi =  diffBi %>%
+  summarize(diffBmean = mean(diffBelow, na.rm = TRUE), 
+            diffBmedian = median(diffBelow, na.rm = TRUE), 
+            diffBsd=sd(diffBelow, na.rm = TRUE),
+            diffBmin = min(diffBelow, na.rm = TRUE), 
+            diffBmax = max(diffBelow, na.rm = TRUE))
+)
+```
+
+```{r}
+
+( 
+  summarizeAboveTp =  diffTp %>%
+  summarize(diffAmean = mean(diffAbove, na.rm = TRUE), 
+            diffAmedian = median(diffAbove, na.rm = TRUE), 
+            diffAsd=sd(diffAbove, na.rm = TRUE),
+            diffAmin = min(diffAbove, na.rm = TRUE), 
+            diffAmax = max(diffAbove, na.rm = TRUE))
+)
+```
+
+```{r}
+(
+  summarizeBelowTp =  diffTp %>%
+  summarize(diffBmean = mean(diffBelow, na.rm = TRUE), 
+            diffBmedian = median(diffBelow, na.rm = TRUE), 
+            diffBsd=sd(diffBelow, na.rm = TRUE),
+            diffBmin = min(diffBelow, na.rm = TRUE), 
+            diffBmax = max(diffBelow, na.rm = TRUE))
+)
+```
+
+```{r}
+
+( 
+  summarizeAboveTs =  diffTs %>%
+  summarize(diffAmean = mean(diffAbove, na.rm = TRUE), 
+            diffAmedian = median(diffAbove, na.rm = TRUE), 
+            diffAsd=sd(diffAbove, na.rm = TRUE),
+            diffAmin = min(diffAbove, na.rm = TRUE), 
+            diffAmax = max(diffAbove, na.rm = TRUE))
+)
+```
+
+```{r}
+(
+  summarizeBelowTs =  diffTs %>%
+  summarize(diffBmean = mean(diffBelow, na.rm = TRUE), 
+            diffBmedian = median(diffBelow, na.rm = TRUE), 
+            diffBsd=sd(diffBelow, na.rm = TRUE),
+            diffBmin = min(diffBelow, na.rm = TRUE), 
+            diffBmax = max(diffBelow, na.rm = TRUE))
+)
+```

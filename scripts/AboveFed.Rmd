@@ -1,0 +1,118 @@
+---
+title: "AboveFed"
+author: "Anna Talucci"
+date: "2023-08-09"
+output: html_document
+---
+
+# Packages
+```{r}
+library(terra)
+library(gdalUtilities)
+library(sf)
+library(sp)
+library(tidyverse)
+library(ids)
+library(stringi)
+```
+
+# Data
+## raster
+
+```{r}
+r = rast("../data/AboveFed/tif/AboveFedBI2002.tif")
+```
+
+```{r}
+r
+names(r)
+```
+
+## pts
+
+## predictions
+```{r}
+above = read.csv("../data/PredictLandscapes/AbovegroundCombustion.csv")
+```
+
+
+```{r}
+below = read.csv("../data/PredictLandscapes/BelowgroundCombustion.csv")
+```
+
+```{r}
+pts = st_read("../data/burnPts/FislBurnPtsAllWgs.shp", "FislBurnPtsAllWgs")
+```
+
+## landscapes
+```{r}
+L20 = st_read("../data/Landscapes/final_plots_lat_lon.shp", "final_plots_lat_lon")
+```
+
+```{r}
+L20
+```
+```{r}
+bi2002 = L20 %>% filter(ID==1982)
+```
+# Join Predic to Points
+
+
+```{r}
+above_pts = full_join(pts, above, by = c("ID1", "ID2", "ID", "eco", "fireID", "RID", "lat", "lon")) %>% rename(above = prediction) %>% filter(eco=="BI") %>% filter(ID2==2002)
+```
+
+```{r}
+above_pts
+```
+
+```{r}
+below_pts = full_join(pts, below, by = c("ID1", "ID2", "ID", "eco", "fireID", "RID", "lat", "lon")) %>% drop_na()
+```
+
+```{r}
+below_pts
+```
+
+# Reproject Raster
+```{r}
+r_ak = project(r, "epsg:3338", 
+                       method = "near",
+                       res = 463.3127165275002)
+```
+
+# Reproject shp
+
+```{r}
+L1982 = st_transform(bi2002, crs = 3338)
+above = st_transform(above_pts, crs = 3338)
+```
+
+# Coerce points
+```{r}
+vsp <- as_spatial(above)
+v <- vect(st_geometry(above))
+
+```
+
+# plot
+```{r}
+plot(r_ak$b1)
+plot(st_geometry(above), add=TRUE)
+```
+```{r}
+ex <- raster::extract(r_ak, v)
+```
+```{r}
+ex
+```
+```{r}
+r_ak %>% 
+  as.data.frame(xy = TRUE) %>%
+ggplot() +
+  geom_tile(aes(x = x, y = y, fill = b1)) +
+  ggtitle("Belowground combustion") 
+
+```
+
+

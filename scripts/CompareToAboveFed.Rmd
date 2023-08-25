@@ -1,0 +1,75 @@
+---
+title: "Compare To AboveFed"
+author: "Anna Talucci"
+date: "2023-08-09"
+output: html_document
+---
+
+# Overview
+compare 30 m combustion values to 500 m combustion values from AboveFed
+# Projections
+
+
+# Packages
+```{r}
+
+library(sf)
+library(tidyverse)
+
+```
+
+# Data
+## ABOVE FED Extract
+```{r}
+af2002= read.csv("../data/AboveFed/extract/AboveFedBI2002.csv")
+```
+
+```{r}
+head(af2002)
+```
+## predictions
+```{r}
+above = read.csv("../data/PredictLandscapes/AbovegroundCombustion.csv")
+```
+
+```{r}
+below = read.csv("../data/PredictLandscapes/BelowgroundCombustion.csv")
+```
+
+```{r}
+head(below)
+```
+
+# Rename Combutions colum and join
+```{r}
+belowPred = below %>% dplyr::select("ID1", "ID2", "ID", "eco", "fireID", 'prediction') %>% rename(below = prediction)
+abovePred = above %>% dplyr::select("ID1", "ID2", "ID", "eco", "fireID", 'prediction') %>% rename(above = prediction)
+```
+
+```{r}
+af2002Select = af2002  %>% dplyr::select("ID1", 'b1', "b2", "b3") %>% rename(AFabove = b1, AFbelow = b2, AFtotal = b3)
+```
+
+```{r}
+af2002Select
+```
+
+# Join Predic to Points
+
+```{r}
+allData = full_join(abovePred, belowPred, by = c("ID1", "ID2", "ID", "eco", "fireID")) 
+```
+
+```{r}
+bi2002 = allData %>% 
+  filter(eco=='BI') %>% 
+  filter(ID2==2002) %>% 
+  dplyr::select(ID1, above, below) %>%
+  filter(ID1=="Fgd6xLkF")
+```
+
+%>%
+  full_join(., af2002Select, by = c("ID1")) 
+```{r}
+bi2002
+```

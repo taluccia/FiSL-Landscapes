@@ -1,0 +1,564 @@
+---
+title: "Predict to Raster"
+author: "Anna Talucci"
+date: "2023-08-07"
+output: html_document
+---
+
+# Overview
+Combustion outputs predicted to raster
+# Projections
+
+
+# Packages
+```{r}
+library(terra)
+library(gdalUtilities)
+library(sf)
+library(tidyverse)
+library(stars)
+```
+
+# Data
+
+## predictions
+```{r}
+above = read.csv("../data/PredictLandscapes/BurnDateAbovegroundCombustion.csv")
+```
+
+
+```{r}
+below = read.csv("../data/PredictLandscapes/BurnDateBelowgroundCombustion.csv")
+```
+
+## landscapes
+```{r}
+L20 = st_read("../data/Landscapes/final_plots_lat_lon.shp", "final_plots_lat_lon")
+```
+
+```{r}
+head(L20)
+```
+
+## Shapefiles
+```{r}
+pts = st_read("../data/burnPts/FislBurnPtsAllWgs.shp", "FislBurnPtsAllWgs")
+```
+
+```{r}
+r1249 = rast("../data/LandsatRaster/wgs84/BI/Fisl_BI1249.tif")
+r1800 = rast("../data/LandsatRaster/wgs84/BI/Fisl_BI1800.tif")
+r1889 = rast("../data/LandsatRaster/wgs84/BI/Fisl_BI1889.tif")
+r1891 = rast("../data/LandsatRaster/wgs84/BI/Fisl_BI1891.tif")
+r1982 = rast("../data/LandsatRaster/wgs84/BI/Fisl_BI1982.tif")
+```
+
+```{r}
+r3952 = rast("../data/LandsatRaster/wgs84/BC/Fisl_BC3952.tif")
+r4049 = rast("../data/LandsatRaster/wgs84/BC/Fisl_BC4049.tif")
+r4139 = rast("../data/LandsatRaster/wgs84/BC/Fisl_BC4139.tif")
+r4219 = rast("../data/LandsatRaster/wgs84/BC/Fisl_BC4219.tif")
+r4220 = rast("../data/LandsatRaster/wgs84/BC/Fisl_BC4220.tif")
+```
+
+```{r}
+r5938 = rast("../data/LandsatRaster/wgs84/TP/Fisl_TP5938.tif")
+r5939 = rast("../data/LandsatRaster/wgs84/TP/Fisl_TP5939.tif")
+r6393 = rast("../data/LandsatRaster/wgs84/TP/Fisl_TP6393.tif")
+r6755 = rast("../data/LandsatRaster/wgs84/TP/Fisl_TP6755.tif")
+```
+
+```{r}
+r8301 = rast("../data/LandsatRaster/wgs84/TS/Fisl_TS8301.tif")
+r8392 = rast("../data/LandsatRaster/wgs84/TS/Fisl_TS8392.tif")
+r8937 = rast("../data/LandsatRaster/wgs84/TS/Fisl_TS8937.tif")
+```
+
+
+## List of rasters
+
+
+```{r}
+bilist <- list.files(path="../data/LandsatRaster/wgs84/BI",pattern='tif$', full.names = TRUE)
+bclist <- list.files(path="../data/LandsatRaster/wgs84/BC",pattern='tif$', full.names = TRUE)
+tplist <- list.files(path="../data/LandsatRaster/wgs84/TP",pattern='tif$', full.names = TRUE)
+tslist <- list.files(path="../data/LandsatRaster/wgs84/TS",pattern='tif$', full.names = TRUE)
+```
+
+### Name items in a list with file name
+```{r}
+names(bilist) <- tools::file_path_sans_ext(basename(bilist))
+names(bclist) <- tools::file_path_sans_ext(basename(bclist))
+names(tplist) <- tools::file_path_sans_ext(basename(tplist))
+names(tslist) <- tools::file_path_sans_ext(basename(tslist))
+```
+
+```{r}
+rasters <- function(list){ 
+  purrr::map(list, rast) 
+}
+```
+
+
+```{r}
+rbi = rasters(bilist)
+rbc = rasters(bclist)
+rtp = rasters(tplist)
+rts = rasters(tslist)
+```
+
+
+# look at data
+
+```{r}
+head(pts)
+```
+
+```{r}
+head(above)
+```
+
+```{r}
+rbi
+```
+```{r}
+rbc
+```
+
+```{r}
+rtp
+```
+## raster
+
+# Join Predic to Points
+
+
+```{r}
+above_pts = full_join(pts, above, by = c("ID1", "ID2", "ID", "eco", "fireID", "RID", "lat", "lon")) %>% drop_na()
+```
+
+```{r}
+above_pts
+```
+
+```{r}
+below_pts = full_join(pts, below, by = c("ID1", "ID2", "ID", "eco", "fireID", "RID", "lat", "lon")) %>% drop_na()
+```
+
+```{r}
+below_pts
+```
+
+```{r}
+above_pts %>% st_drop_geometry() %>% group_by(eco, ID, ID2) %>% summarize(n=n())
+
+
+```
+BI	2000		
+BI	2002			
+BI	2005		
+BI	2009			
+BI	2010		
+BI	2013			
+BI	2015			
+BI	2016		
+TP	2013			
+TP	2015			
+TS	2015	
+
+# Check crs match
+```{r}
+st_crs(below_pts)$proj4string
+crs(r, proj=TRUE)
+```
+```{r}
+st_crs(below_pts) 
+```
+
+```{r}
+project(rbi$FiSLBI1249, crs =4326)
+
+```
+
+# Filter points & Landscape
+```{r}
+sort(unique(above_pts$ID))
+```
+
+```{r}
+above1249 = above_pts %>% filter(ID==1249)
+above1891 = above_pts %>% filter(ID==1891)
+above1800 = above_pts %>% filter(ID==1800)
+above1889 = above_pts %>% filter(ID==1889)
+above1982 = above_pts %>% filter(ID==1982)
+```
+
+```{r}
+above3952 = above_pts %>% filter(ID==3952)
+above4049 = above_pts %>% filter(ID==4049)
+above4139 = above_pts %>% filter(ID==4139)
+above4219 = above_pts %>% filter(ID==4219)
+above4220 = above_pts %>% filter(ID==4220)
+```
+
+```{r}
+above5938 = above_pts %>% filter(ID==5938)
+above5939 = above_pts %>% filter(ID==5939)
+above6393 = above_pts %>% filter(ID==6393)
+above6755 = above_pts %>% filter(ID==6755)
+```
+
+```{r}
+above8301 = above_pts %>% filter(ID==8301)
+above8392 = above_pts %>% filter(ID==8392)
+above8937 = above_pts %>% filter(ID==8937)
+```
+
+```{r}
+unique(below_pts$ID)
+```
+## Below
+```{r}
+below1249 = below_pts %>% filter(ID==1249)
+below1891 = below_pts %>% filter(ID==1891)
+below1800 = below_pts %>% filter(ID==1800)
+below1889 = below_pts %>% filter(ID==1889)
+below1982 = below_pts %>% filter(ID==1982)
+```
+
+```{r}
+below3952 = below_pts %>% filter(ID==3952)
+below4049 = below_pts %>% filter(ID==4049)
+below4139 = below_pts %>% filter(ID==4139)
+below4219 = below_pts %>% filter(ID==4219)
+below4220 = below_pts %>% filter(ID==4220)
+```
+
+```{r}
+below5938 = below_pts %>% filter(ID==5938)
+below5939 = below_pts %>% filter(ID==5939)
+below6393 = below_pts %>% filter(ID==6393)
+below6755 = below_pts %>% filter(ID==6755)
+```
+
+```{r}
+below8301 = below_pts %>% filter(ID==8301)
+below8392 = below_pts %>% filter(ID==8392)
+below8937 = below_pts %>% filter(ID==8937)
+```
+## landscapes
+```{r}
+L1249 = L20 %>% filter(ID==1249)
+L1891 = L20 %>% filter(ID==1891)
+L1800 = L20 %>% filter(ID==1800)
+L1889 = L20 %>% filter(ID==1889)
+L1982 = L20 %>% filter(ID==1982)
+```
+
+```{r}
+L3952 = L20 %>% filter(ID==3952)
+L4049 = L20 %>% filter(ID==4049)
+L4139 = L20 %>% filter(ID==4139)
+L4219 = L20 %>% filter(ID==4219)
+L4220 = L20 %>% filter(ID==4220)
+```
+
+```{r}
+L5938 = L20 %>% filter(ID==5938)
+L5939 = L20 %>% filter(ID==5939)
+L6393 = L20 %>% filter(ID==6393)
+L6755 = L20 %>% filter(ID==6755)
+```
+
+```{r}
+L8301 = L20 %>% filter(ID==8301)
+L8392 = L20 %>% filter(ID==8392)
+L8937 = L20 %>% filter(ID==8937)
+```
+
+# Make Raster 
+
+## Above
+```{r}
+r_above1249 =  rasterize(vect(above1249), r1249, field = "prediction")
+r_above1891 =  rasterize(vect(above1891), r1891, field = "prediction")
+r_above1800 =  rasterize(vect(above1800), r1800, field = "prediction")
+r_above1889 =  rasterize(vect(above1889), r1889, field = "prediction")
+r_above1982 =  rasterize(vect(above1982), r1982, field = "prediction")
+```
+
+```{r}
+r_above3952 = rasterize(vect(above3952), r3952, field = "prediction")
+r_above4049 = rasterize(vect(above4049), r4049, field = "prediction")
+r_above4139 = rasterize(vect(above4139), r4139, field = "prediction")
+r_above4219 = rasterize(vect(above4219), r4219, field = "prediction")
+r_above4220 = rasterize(vect(above4220), r4220, field = "prediction")
+```
+
+```{r}
+r_above5938 =  rasterize(vect(above5938), r5938, field = "prediction")
+r_above5939 =  rasterize(vect(above5939), r5939, field = "prediction")
+r_above6393 =  rasterize(vect(above6393), r6393, field = "prediction")
+r_above6755 =  rasterize(vect(above6755), r6755, field = "prediction")
+```
+
+```{r}
+r_above8301 = rasterize(vect(above8301), r8301, field = "prediction")
+r_above8392 = rasterize(vect(above8392), r8392, field = "prediction")
+r_above8937 = rasterize(vect(above8937), r8937, field = "prediction")
+```
+
+
+## Below
+```{r}
+r_below1249 =  rasterize(vect(below1249), r1249, field = "prediction")
+r_below1891 =  rasterize(vect(below1891), r1891, field = "prediction")
+r_below1800 =  rasterize(vect(below1800), r1800, field = "prediction")
+r_below1889 =  rasterize(vect(below1889), r1889, field = "prediction")
+r_below1982 =  rasterize(vect(below1982), r1982, field = "prediction")
+```
+
+```{r}
+r_below3952 = rasterize(vect(below3952), r3952, field = "prediction")
+r_below4049 = rasterize(vect(below4049), r4049, field = "prediction")
+r_below4139 = rasterize(vect(below4139), r4139, field = "prediction")
+r_below4219 = rasterize(vect(below4219), r4219, field = "prediction")
+r_below4220 = rasterize(vect(below4220), r4220, field = "prediction")
+```
+
+```{r}
+r_below5938 =  rasterize(vect(below5938), r5938, field = "prediction")
+r_below5939 =  rasterize(vect(below5939), r5939, field = "prediction")
+r_below6393 =  rasterize(vect(below6393), r6393, field = "prediction")
+r_below6755 =  rasterize(vect(below6755), r6755, field = "prediction")
+```
+
+```{r}
+r_below8301 = rasterize(vect(below8301), r8301, field = "prediction")
+r_below8392 = rasterize(vect(below8392), r8392, field = "prediction")
+r_below8937 = rasterize(vect(below8937), r8937, field = "prediction")
+```
+
+
+# Clip raster to landscape
+
+## Above
+```{r}
+cropAbove1249 = mask(crop(r_above1249,L1249),L1249)
+cropAbove1891 = mask(crop(r_above1891,L1891),L1891)
+cropAbove1800 = mask(crop(r_above1800,L1800),L1800)
+cropAbove1889 = mask(crop(r_above1889,L1889),L1889)
+cropAbove1982 = mask(crop(r_above1982,L1982),L1982)
+```
+
+```{r}
+cropAbove3952 = mask(crop(r_above3952,L3952),L3952)
+cropAbove4049 = mask(crop(r_above4049,L4049),L4049)
+cropAbove4139 = mask(crop(r_above4139,L4139),L4139)
+cropAbove4219 = mask(crop(r_above4219,L4219),L4219)
+cropAbove4220 = mask(crop(r_above4220,L4220),L4220)
+```
+
+```{r}
+cropAbove5938 = mask(crop(r_above5938,L5938),L5938)
+cropAbove5939 = mask(crop(r_above5939,L5939),L5939)
+cropAbove6393 = mask(crop(r_above6393,L6393),L6393)
+cropAbove6755 = mask(crop(r_above6755,L6755),L6755)
+```
+
+```{r}
+cropAbove8301 = mask(crop(r_above8301,L8301),L8301)
+cropAbove8392 = mask(crop(r_above8392,L8392),L8392)
+cropAbove8937 = mask(crop(r_above8937,L8937),L8937)
+```
+
+
+
+## Below
+```{r}
+cropBelow1249 = mask(crop(r_below1249,L1249),L1249)
+cropBelow1891 = mask(crop(r_below1891,L1891),L1891)
+cropBelow1800 = mask(crop(r_below1800,L1800),L1800)
+cropBelow1889 = mask(crop(r_below1889,L1889),L1889)
+cropBelow1982 = mask(crop(r_below1982,L1982),L1982)
+```
+
+```{r}
+cropBelow3952 = mask(crop(r_below3952,L3952),L3952)
+cropBelow4049 = mask(crop(r_below4049,L4049),L4049)
+cropBelow4139 = mask(crop(r_below4139,L4139),L4139)
+cropBelow4219 = mask(crop(r_below4219,L4219),L4219)
+cropBelow4220 = mask(crop(r_below4220,L4220),L4220)
+```
+
+```{r}
+cropBelow5938 = mask(crop(r_below5938,L5938),L5938)
+cropBelow5939 = mask(crop(r_below5939,L5939),L5939)
+cropBelow6393 = mask(crop(r_below6393,L6393),L6393)
+cropBelow6755 = mask(crop(r_below6755,L6755),L6755)
+```
+
+```{r}
+cropBelow8301 = mask(crop(r_below8301,L8301),L8301)
+cropBelow8392 = mask(crop(r_below8392,L8392),L8392)
+cropBelow8937 = mask(crop(r_below8937,L8937),L8937)
+```
+
+
+# Stack rasters & name bands
+```{r}
+stk1249 = c(cropAbove1249, cropBelow1249)
+stk1891 = c(cropAbove1891, cropBelow1891)
+stk1800 = c(cropAbove1800, cropBelow1800)
+stk1889 = c(cropAbove1889, cropBelow1889)
+stk1982 = c(cropAbove1982, cropBelow1982)
+```
+
+```{r}
+stk3952 = c(cropAbove3952, cropBelow3952)
+stk4049 = c(cropAbove4049, cropBelow4049)
+stk4139 = c(cropAbove4139, cropBelow4139)
+stk4219 = c(cropAbove4219, cropBelow4219)
+stk4220 = c(cropAbove4220, cropBelow4220)
+```
+
+```{r}
+stk5938 = c(cropAbove5938, cropBelow5938)
+stk5939 = c(cropAbove5939, cropBelow5939)
+stk6393 = c(cropAbove6393, cropBelow6393)
+stk6755 = c(cropAbove6755, cropBelow6755)
+```
+
+```{r}
+stk8301 = c(cropAbove8301, cropBelow8301)
+stk8392 = c(cropAbove8392, cropBelow8392)
+stk8937 = c(cropAbove8937, cropBelow8937)
+```
+
+```{r}
+names(stk1249) = c('above', 'below')
+names(stk1891) = c('above', 'below')
+names(stk1800) = c('above', 'below')
+names(stk1889) = c('above', 'below')
+names(stk1982) = c('above', 'below')
+```
+
+```{r}
+names(stk3952) = c('above', 'below')
+names(stk4049) = c('above', 'below')
+names(stk4139) = c('above', 'below')
+names(stk4219) = c('above', 'below')
+names(stk4220) = c('above', 'below')
+```
+
+```{r}
+names(stk5938) = c('above', 'below')
+names(stk5939) = c('above', 'below')
+names(stk6393) = c('above', 'below')
+names(stk6755) = c('above', 'below')
+```
+```{r}
+names(stk8301) = c('above', 'below')
+names(stk8392) = c('above', 'below')
+names(stk8937) = c('above', 'below')
+```
+
+# Check data
+```{r}
+stk8301
+nlyr(stk8301)
+names(stk8301)
+```
+```{r}
+stk8392
+nlyr(stk8392)
+names(stk8392)
+```
+
+```{r}
+stk8937
+nlyr(stk8937)
+names(stk8937)
+```
+
+```{r}
+stk6755
+nlyr(stk6755)
+names(stk6755)
+```
+
+```{r}
+stk4220
+nlyr(stk4220)
+names(stk4220)
+```
+# Plot
+```{r}
+stk5938 %>% 
+  as.data.frame(xy = TRUE) %>%
+ggplot() +
+  geom_tile(aes(x = x, y = y, fill =  above)) +
+    ggtitle("Aboveground combustion")
+
+```
+
+```{r}
+stk5938 %>% 
+  as.data.frame(xy = TRUE) %>%
+ggplot() +
+  geom_tile(aes(x = x, y = y, fill =  below)) +
+  ggtitle("Belowground combustion")
+
+```
+
+# Write Rasters
+```{r eval=FALSE, include=FALSE}
+writeRaster(stk1249, "../outputs/LandscapeCombustion/CombustStack1249.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(stk1891, "../outputs/LandscapeCombustion/CombustStack1891.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(stk1800, "../outputs/LandscapeCombustion/CombustStack1800.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(stk1889, "../outputs/LandscapeCombustion/CombustStack1889.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(stk1982, "../outputs/LandscapeCombustion/CombustStack1982.tif", overwrite=TRUE, filetype="GTiff")
+```
+
+```{r eval=FALSE, include=FALSE}
+writeRaster(stk3952, "../outputs/LandscapeCombustion/CombustStack3952.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(stk4049, "../outputs/LandscapeCombustion/CombustStack4049.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(stk4139, "../outputs/LandscapeCombustion/CombustStack4139.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(stk4219, "../outputs/LandscapeCombustion/CombustStack4219.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(stk4220, "../outputs/LandscapeCombustion/CombustStack4220.tif", overwrite=TRUE, filetype="GTiff")
+```
+
+```{r eval=FALSE, include=FALSE}
+writeRaster(stk5938, "../outputs/LandscapeCombustion/CombustStack5938.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(stk5939, "../outputs/LandscapeCombustion/CombustStack5939.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(stk6393, "../outputs/LandscapeCombustion/CombustStack6393.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(stk6755, "../outputs/LandscapeCombustion/CombustStack6755.tif", overwrite=TRUE, filetype="GTiff")
+```
+
+```{r}
+writeRaster(stk8301, "../outputs/LandscapeCombustion/CombustStack8301.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(stk8392, "../outputs/LandscapeCombustion/CombustStack8392.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(stk8937, "../outputs/LandscapeCombustion/CombustStack8937.tif", overwrite=TRUE, filetype="GTiff")
+```
+
+# Write Rasters
+```{r eval=FALSE, include=FALSE}
+writeRaster(cropAbove1249, "../outputs/LandscapeCombustion/aboveCombustion1249.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(cropAbove1891, "../outputs/LandscapeCombustion/aboveCombustion1891.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(cropAbove1800, "../outputs/LandscapeCombustion/aboveCombustion1800.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(cropAbove1889, "../outputs/LandscapeCombustion/aboveCombustion1889.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(cropAbove5938, "../outputs/LandscapeCombustion/aboveCombustion5938.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(cropAbove6393, "../outputs/LandscapeCombustion/aboveCombustion6393.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(cropAbove8301, "../outputs/LandscapeCombustion/aboveCombustion8301.tif", overwrite=TRUE, filetype="GTiff")
+```
+
+```{r eval=FALSE, include=FALSE}
+writeRaster(cropBelow1249, "../outputs/LandscapeCombustion/belowCombustion1249.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(cropBelow1891, "../outputs/LandscapeCombustion/belowCombustion1891.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(cropBelow1800, "../outputs/LandscapeCombustion/belowCombustion1800.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(cropBelow1889, "../outputs/LandscapeCombustion/belowCombustion1889.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(cropBelow5938, "../outputs/LandscapeCombustion/belowCombustion5938.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(cropBelow6393, "../outputs/LandscapeCombustion/belowCombustion6393.tif", overwrite=TRUE, filetype="GTiff")
+writeRaster(cropBelow8301, "../outputs/LandscapeCombustion/belowCombustion8301.tif", overwrite=TRUE, filetype="GTiff")
+```
+

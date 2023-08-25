@@ -1,0 +1,41 @@
+---
+title: "Explore Combustion Rasters"
+author: "Anna Talucci"
+date: "2023-08-24"
+output: html_document
+---
+
+
+# Packages
+```{r}
+library(terra)
+library(gdalUtilities)
+library(sf)
+library(tidyverse)
+library(stars)
+```
+
+```{r}
+stk5938 = rast("../outputs/LandscapeCombustion/CombustStack5938.tif")
+stk5939 = rast("../outputs/LandscapeCombustion/CombustStack5939.tif")
+stk6393 = rast("../outputs/LandscapeCombustion/CombustStack6393.tif")
+stk6755 = rast("../outputs/LandscapeCombustion/CombustStack6755.tif")
+```
+# Plot
+```{r}
+stk5939 %>% 
+  as.data.frame(xy = TRUE) %>%
+ggplot() +
+  geom_tile(aes(x = x, y = y, fill =  above)) +
+    ggtitle("Aboveground combustion")
+
+```
+
+```{r}
+stk6755 %>% 
+  as.data.frame(xy = TRUE) %>%
+ggplot() +
+  geom_tile(aes(x = x, y = y, fill =  below)) +
+  ggtitle("Belowground combustion")
+
+```
