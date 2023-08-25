@@ -40,8 +40,29 @@ allData = vroom::vroom(f)
 allData
 ```
 
+# modis burn date
+```{r}
+bd <- list.files(path = "../data/BurnDate/", pattern = "*.csv", full.names = TRUE)
+bdData = vroom::vroom(bd)
+```
 
+```{r}
+bdData
+```
+# Compare Data
+```{r}
+bd = bdData %>% dplyr::select(BurnDate, ID, ID1, ID2)
+dobbc = allData %>% dplyr::select(DoB, ID1)
+join = full_join(bd, dobbc, by="ID1")
+```
 
+```{r}
+join 
+```
+```{r}
+sum(is.na(join$DoB))
+sum(is.na(allData$DoB))
+```
 # add Date as string
 ```{r}
 ( allData1 = allData %>% 
@@ -67,4 +88,32 @@ cat(paste0(sprintf("'%s'", sort(unique(allData1$Date))), collapse = ", "))
 # Save pt shp file
 ```{r}
 st_write(allData1, "../outputs/DoBpts/FislDoBpts.shp", driver="ESRI Shapefile")
+```
+
+# For Burn Date
+# add Date as string
+```{r}
+( burnData1 = bdData %>% 
+  mutate(yyyymmdd = as.Date(BurnDate, origin = as.Date(paste0(ID2,"-01-01")))) %>%
+  dplyr::select(BurnDate:lon, yyyymmdd) %>%
+  mutate(Date = as.character(yyyymmdd)) %>%
+    left_join(., pts1, by = join_by(ID1)) %>%
+  rename(DOB_Ist = BurnDate) %>%
+    st_as_sf() %>%
+    dplyr::select(DOB_Ist:eco, Date, geometry)
+)
+```
+
+
+
+# Get calendar date
+with quotes and separated by comma to add to GEE code.
+
+```{r}
+cat(paste0(sprintf("'%s'", sort(unique(burnData1$Date))), collapse = ", "))
+```
+
+# Save pt shp file
+```{r}
+st_write(burnData1, "../outputs/DoBpts/FislBurnDatePts.shp", driver="ESRI Shapefile")
 ```

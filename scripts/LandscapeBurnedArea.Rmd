@@ -23,6 +23,9 @@ library(tidyverse)
 ```{r}
 Landscapes = st_read("../data/Landscapes/final_plots_lat_lon.shp", "final_plots_lat_lon")
 ```
+```{r}
+sort(unique(Landscapes$ID))
+```
 ## Fires
 ```{r}
 akFires = st_read("../data/perimeters/AlaskaFires3338.shp", "AlaskaFires3338")

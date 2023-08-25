@@ -8,10 +8,17 @@ The repository host processes and code for producing Landscape layers that feed 
 The process is dependent on a combination of Earth Engine (EE) Processes and R
 
 # Process
-Step 1 -- EE--LandsatImageForPoints export as equal area with 30m resolution
-Step 2 -- R--Run OrganizeShpData.Rmd --
-       -- R--Get fire polygonsthat overlap landscapes -> needed in EE Day of Burn
-Step 3 -- R--Run LandscapeBurnedArea.Rmd
+
+| Step    | Script                         | plateform  | Input files        | output files  |
+| ------- |:------------------------------:| ----------:| ------------------:| -------------:|
+| 1       | OrganizeShpData.Rmd            |  R         |
+| 2       | LandsatImageForPoints          |  EE        | Landscape polygons
+| 3       | LandscapeBurnedArea.Rmd        |  R         | Lnadscapes fires   |
+| 4       | RasterToPoint.Rmd              |  R
+
+Step 1 -- R--Run OrganizeShpData.Rmd -- combine canadian fire perimeters, filter for AK fires from all USA
+Step 2 -- EE--LandsatImageForPoints export as equal area with 30m resolution
+Step 3 -- R--Run LandscapeBurnedArea.Rmd ---creates burned area polygon for within the landscape polygon, and selects the perimeters that over lap with the landscapes (full perimeters are needed in EE Day of Burn)
 Step 4 -- R--RasterToPoint.Rmd -> input is Output from step 1 & 3 -> output is point shapefile for burned areas within Landscape
 Step 5 -- EE--Static Variable Extract Used burned points to extract static variables
 Step 6 -- EE--Landsat Veg Indicies
@@ -45,6 +52,7 @@ EE Processing
 
 [Alaska Fire perimeters from MTBS](https://www.mtbs.gov/direct-download)
 [Canada Fire perimeters](https://cwfis.cfs.nrcan.gc.ca/datamart/download/nbac)
+
 # Notes
 
 
@@ -62,3 +70,8 @@ Three scripts from Stefano; all of these scripts take a shapefile of burned pixe
 
 
 All of these scripts take a shapefile of burned pixel centroids as the input.  The shapefile needs to have a date of burn, a unique pixel identifier and the year of burn in order to get all the scripts to work.  All the scripts will output csv files which can then be used to predict the R models on and those predictions can be joined back into the shapefile based on each pixel's unique ID and then rasterized.  
+
+
+# ABoVE FED Data
+[SK Combustion](https://daac.ornl.gov/cgi-bin/dsviewer.pl?ds_id=1740)
+[AK + Canada Combustion](https://daac.ornl.gov/cgi-bin/dsviewer.pl?ds_id=2063)

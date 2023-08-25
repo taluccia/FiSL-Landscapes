@@ -8,6 +8,8 @@ output: html_document
 
 # Overview
  For 20 landscapes clean and combine data for combustion model.
+ 
+ Create on data frame with all sampled points and variables. The dataframe will be subset in the model script.
 
 # Librarys
 ```{r}
@@ -17,12 +19,12 @@ library(tidyverse)
 # Data
 
 ## FWI
-## List of rasters
+
 ```{r}
 fwi <- list.files(path="../data/LandscapeData/fwi",pattern='*.csv', full.names = TRUE) %>% 
   purrr::map(., read_csv) %>% 
   bind_rows() %>%
-  dplyr::select(BUI:wspeed) %>%
+  dplyr::select(BUI:FWI, ID1, ID2, ISI, rh:wspeed) %>%
   rename(DOB_lst=DOB_Ist, Relative.humidity=rh, Temperature=t, Wind.speed=wspeed,VPD = vpd,) 
 ```
 
@@ -30,6 +32,27 @@ fwi <- list.files(path="../data/LandscapeData/fwi",pattern='*.csv', full.names =
 fwi 
 ```
 
+```{r}
+min(fwi$FWI)
+max(fwi$FWI)
+```
+
+```{r}
+fwiBurnDate <- list.files(path="../data/LandscapeData/fwiBurnDate",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  bind_rows() %>%
+  dplyr::select(BUI:FWI, ID1, ID2, ISI, rh:wspeed) %>%
+  rename(DOB_lst=DOB_Ist, Relative.humidity=rh, Temperature=t, Wind.speed=wspeed,VPD = vpd,) 
+```
+
+```{r}
+fwiBurnDate
+```
+
+```{r}
+min(fwiBurnDate$FWI)
+max(fwiBurnDate$FWI)
+```
 ## Landsat
 ### Veg
 ```{r}
@@ -38,7 +61,8 @@ veg =  list.files(path="../data/LandscapeData/LandsatVeg",pattern='*.csv', full.
   map_dfr(., ~ .x %>%
         mutate(across(fireID, as.character))) %>%
   bind_rows() %>%
-  dplyr::select(ID:rdnbr)
+  dplyr::select(ID:rdnbr) %>%
+  rename(NDVI=dNDVI, NDII=dNDII)
 ```
 ```{r}
 veg
@@ -58,7 +82,7 @@ tct =  list.files(path="../data/LandscapeData/landsatTCT",pattern='*.csv', full.
 tct
 ```
 
-## Tree Cover
+### Tree Cover
 ```{r}
 treecover =  list.files(path="../data/LandscapeData/treeCover",pattern='*.csv', full.names = TRUE) %>% 
   purrr::map(., read_csv) %>% 
@@ -72,7 +96,7 @@ treecover =  list.files(path="../data/LandscapeData/treeCover",pattern='*.csv', 
 ```{r}
 treecover 
 ```
-
+###Join
 ```{r}
 ( landsat = full_join(veg, tct, by = c("ID1", "ID2", "fireID")) %>%
     full_join(., treecover, by = c("ID1", "ID2", "fireID")))
@@ -85,7 +109,7 @@ terrain =  list.files(path="../data/LandscapeData/staticTerrain",pattern='*.csv'
   map_dfr(., ~ .x %>%
         mutate(across(fireID, as.character))) %>%
   bind_rows() %>%
-  dplyr::select(ID:start)
+  dplyr::select(ID:slope)
 ```
 
 ```{r}
@@ -106,9 +130,43 @@ sveg =  list.files(path="../data/LandscapeData/staticVeg",pattern='*.csv', full.
 sveg 
 ```
 
+### Soil
 ```{r}
-( static = full_join(terrain, sveg, by = c("ID1", "ID2", "fireID")) )
+ssoil =  list.files(path="../data/LandscapeData/staticSoil",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  map_dfr(., ~ .x %>%
+        mutate(across(fireID, as.character))) %>%
+  bind_rows()  %>%
+  dplyr::select(BD_30, Clay_30, ID1, ID2, SOC_30:Silt_30, pH_30, fireID)  
 ```
+
+```{r}
+ssoil
+```
+
+### Soil
+```{r}
+spfi =  list.files(path="../data/LandscapeData/staticPFI",pattern='*.csv', full.names = TRUE) %>% 
+  purrr::map(., read_csv) %>% 
+  map_dfr(., ~ .x %>%
+        mutate(across(fireID, as.character))) %>%
+  bind_rows()  %>%
+  dplyr::select(ID1, ID2, PFI, fireID)
+```
+
+```{r}
+spfi
+```
+
+### Join
+```{r}
+( static = full_join(terrain, sveg, by = c("ID1", "ID2", "fireID")) %>%
+    full_join(., ssoil, by = c("ID1", "ID2", "fireID")) %>%
+    full_join(., spfi, by = c("ID1", "ID2", "fireID")) )
+```
+
+
+
 
 
 
@@ -119,38 +177,29 @@ sveg
 climateNA =  list.files(path="../data/LandscapeData/climateNA",pattern='*.csv', full.names = TRUE) %>% 
   purrr::map(., read_csv) %>% 
   bind_rows() %>%
-  dplyr::select(id1:Elevation, AHM, CMD, CMD_sm, DD_0, DD_18, DD5, DD5_sm, EMT, Eref, Eref_sm, EXT, MAP, PAS, Rad_sm, SHM, Tmax_sm, Tmin_sm) %>%
-  rename(ID1=id1, ID2=id2, lat=Latitude, lon=Longitude, elevation = Elevation, CNA_AHM=AHM, CNA_CMD=CMD, CNA_CMD_5_8 = CMD_sm, CNA_DD_0=DD_0, CNA_DD_18=DD_18, CNA_DD5=DD5, CNA_DD5_5_8=DD5_sm, CNA_EMT=EMT, CNA_Eref=Eref, CNA_Eref_5_8=Eref_sm, CNA_EXT=EXT, CNA_MAP=MAP, CNA_PAS=PAS, CNA_Rad_5_8=Rad_sm, CNA_SHM=SHM, CNA_Tmax_5_8=Tmax_sm, CNA_Tmin_5_8=Tmin_sm)
+  dplyr::select(id1, id2, AHM, CMD, CMD_sm, DD_0, DD_18, DD5, DD5_sm, EMT, Eref, Eref_sm, EXT, MAP, PAS, Rad_sm, SHM, Tmax_sm, Tmin_sm) %>%
+  rename(ID1=id1, ID2=id2, CNA_AHM=AHM, CNA_CMD=CMD, CNA_CMD_5_8 = CMD_sm, CNA_DD_0=DD_0, CNA_DD_18=DD_18, CNA_DD5=DD5, CNA_DD5_5_8=DD5_sm, CNA_EMT=EMT, CNA_Eref=Eref, CNA_Eref_5_8=Eref_sm, CNA_EXT=EXT, CNA_MAP=MAP, CNA_PAS=PAS, CNA_Rad_5_8=Rad_sm, CNA_SHM=SHM, CNA_Tmax_5_8=Tmax_sm, CNA_Tmin_5_8=Tmin_sm) 
+  
 ```
 
 ```{r}
 climateNA 
 ```
 
-
-
-
-CNA_AHM, CNA_CMD, CNA_CMD_5_8, CNA_DD_0, CNA_DD_18, CNA_DD5, CNA_DD5_5_8, CNA_EMT, CNA_Eref, CNA_Eref_5_8, CNA_EXT, CNA_MAP, CNA_PAS, CNA_Rad_5_8, CNA_SHM, CNA_Tmax_5_8, CNA_Tmin_5_8,
-
-
-
-
-
-
-
-
 # Check number of IDs
 ```{r}
 length(unique(landsat$ID1))
 length(unique(static$ID1))
 length(unique(fwi$ID1))
+length(unique(fwiBurnDate$ID1))
 length(unique(climateNA$ID1))
 ```
-
+fwiBurnDate
 ```{r}
 length(unique(landsat$ID2))
 length(unique(static$ID2))
 length(unique(fwi$ID2))
+length(unique(fwiBurnDate$ID2))
 length(unique(climateNA$ID2))
 ```
 
@@ -160,63 +209,55 @@ length(unique(climateNA$ID2))
 tibble::rowid_to_column(data, "ID")
 full_join(terrain, sveg, by = c("ID1", "ID2", "fireID")) )
 ```{r}
-static_landsat = full_join(static, landsat, by = c("ID1", "ID2", "fireID", "lat", "lon")) 
-
-static_landsat
+allData = full_join(static, landsat, by = c("ID1", "ID2", "ID", "eco", "RID", "fireID", "lat", "lon")) %>%
+  full_join(., climateNA, by = c("ID1", "ID2")) %>%
+  full_join(., fwi, by = c("ID1", "ID2")) 
 ```
 
 ```{r}
-static_landsat_fwi = full_join(static_landsat, fwi1, by = c("ID1", "ID2", "fireID", "lat", "lon")) 
-
-static_landsat_fwi
-```
-
-
-```{r}
-df_for_cna1 = tibble::rowid_to_column(static_landsat_fwi, "ID") %>% 
-  rename(ID1 = ID, UniqueID = ID1) 
-
-df_for_cna2 = df_for_cna1 %>% 
-  dplyr::select(ID1, ID2, lat, lon, elevation)
-```
-
-
-# Select only data of interest to predict
-## For above
-```{r}
-model_data = static_landsat_fwi_cna %>% 
-  rename(DOB_lst=DOB_Ist, Relative.humidity=rh, Temperature=t, Tree.cover=tree_canopy_cover, Wind.speed=wspeed,VPD = vpd, burn_year=ID2.x, lat= lat.x, lon=lon.x) %>%
-  dplyr::select(-ID2.y,-lat.y, -lon.y )
-
-model_data
-
+allData
 ```
 
 ```{r}
-write_csv(model_data, "../outputs/Landscape1DataForCombustionModel.csv")
+allDataBurnDate = full_join(static, landsat, by = c("ID1", "ID2", "ID", "eco", "RID", "fireID", "lat", "lon")) %>%
+  full_join(., climateNA, by = c("ID1", "ID2")) %>%
+  full_join(., fwiBurnDate, by = c("ID1", "ID2")) 
 ```
-%>%
-  dplyr::select(ID1, ID2, NAME, FIREID, UniqueID, lat, lon, BD_30, brightness, BS, BUI, Clay_30, CNA_AHM, CNA_CMD, CNA_CMD_5_8, CNA_DD_0, CNA_DD_18, CNA_DD5, CNA_DD5_5_8, CNA_EMT, CNA_Eref, CNA_Eref_5_8, CNA_EXT, CNA_MAP, CNA_PAS, CNA_Rad_5_8, CNA_SHM, CNA_Tmin_5_8, DC, DEC, DMC, dNBR, DOB_lst, elevation, FFMC, greenness, JP, NDII, NDVI, NV, PFI, pH_30, rbr, rdnbr, Relative.humidity, Ruggedness, Sand_30, Silt_30, slope, SOC_30, Temperature, Tree.cover, wetness, Wind.speed, WS)
-## For Below
+
 ```{r}
-below = static_landsat_fwi_cna %>% 
-  rename(DOB_lst=DOB_Ist, Relative.humidity=rh, Temperature=t, Tree.cover=tree_canopy_cover, Wind.speed=wspeed, ID2=ID2.x, lat= lat.x, lon=lon.x) 
-
-
-below
+allDataBurnDate
 ```
-%>%
-  dplyr::select(ID1, ID2, NAME, FIREID, UniqueID, lat, lon, BD_30, brightness, BS, BUI, Clay_30, CNA_AHM, CNA_CMD, CNA_CMD_5_8, CNA_DD_0, CNA_DD_18, CNA_DD5, CNA_DD5_5_8, CNA_EMT, CNA_Eref, CNA_Eref_5_8, CNA_EXT, CNA_MAP, CNA_PAS, CNA_Rad_5_8, CNA_SHM, CNA_Tmax_5_8, CNA_Tmin_5_8, DC, DEC, DMC, dNBR, DOB_lst, elevation, FFMC, greenness, JP, NDII, NDVI, NV, PFI, pH_30, rbr, rdnbr, Relative.humidity, Ruggedness, Sand_30, Silt_30, slope, SOC_30, Tree.cover, wetness, Wind.speed, WS)
+
+## Check NAs
+There are several NAs for the FWI Data
+
+```{r}
+allData[rowSums(is.na(allData)) > 0,]
+```
+
+```{r}
+naData = allData[rowSums(is.na(allData)) > 0,]
+```
+
+```{r}
+unique(naData$ID)
+```
+```{r}
+naFree = allData %>% drop_na(FWI)
+```
+
+```{r}
+naFree %>% group_by(ID, ID2) %>% summarize(ct = n())
+```
+
 
 # Write to csv
+
 ```{r}
-write_csv(above, "../outputs/Landscape1DataForCombustionModelABOVE.csv")
-```
-```{r}
-write_csv(below, "../outputs/Landscape1DataForCombustionModelBELOW.csv")
+write_csv(allData, "../outputs/Landscape20DataCombustionModel.csv")
 ```
 
 ```{r}
-write_csv(static_landsat_fwi_cna, "../outputs/Landscape1DataForCombustionModel.csv")
+write_csv(allDataBurnDate, "../outputs/L20DataBurnDateCombustionModel.csv")
 ```
 **THE END**
