@@ -15,6 +15,12 @@ library(tidyverse)
 ```
 
 # Data
+"../outputs/Landscape20DataCombustionModel.csv")
+
+```{r}
+combustPts = read_csv("../outputs/Landscape20DataCombustionModel.csv")
+```
+
 
 ```{r}
 points = st_read("../outputs/burnPts/FislBurnPtsAllWgs.shp", "FislBurnPtsAllWgs")
@@ -26,11 +32,29 @@ points
 ```
 
 ```{r}
+sort(unique(points$ID))
+```
+
+```{r}
 sort(unique(points$ID2))
 ```
 
 ```{r}
 points %>% st_drop_geometry() %>% group_by(eco, ID2, N) %>% summarize(n=n())
+
+```
+
+```{r}
+TPpts = points %>% filter(ID %in% c(938, 5939, 6393))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = TPpts, fill=NA, color = "orange") +
+    coord_sf()
+```
+```{r}
+points %>% st_drop_geometry() %>% group_by(ID, ID2) %>% summarize(n=n())
 
 ```
 
@@ -71,3 +95,40 @@ min(bi2013$RID)
 quantile(bi2013$RID)
 max(bi2013$RID)
 ```
+
+# Combustion point data
+```{r}
+combustPts
+```
+
+```{r}
+combustPts %>% drop_na(lon)
+```
+```{r}
+min(round(combustPts$FWI,2), na.rm = TRUE)
+max(round(combustPts$FWI,2), na.rm = TRUE)
+```
+
+```{r}
+compts = st_as_sf(combustPts, coords = c("lon","lat"), crs = 4326, remove = FALSE)
+```
+## Check NAs
+There are several NAs for the FWI Data
+
+```{r}
+combustPts[rowSums(is.na(combustPts)) > 0,]
+```
+
+```{r}
+naData = combustPts[rowSums(is.na(combustPts)) > 0,]
+```
+
+
+```{r}
+naFree = combustPts %>% drop_na(FWI)
+```
+
+```{r}
+naFree %>% group_by(ID, ID2) %>% summarize(ct = n())
+```
+
