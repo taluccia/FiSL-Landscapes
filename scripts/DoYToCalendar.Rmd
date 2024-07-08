@@ -6,7 +6,7 @@ output: html_document
 ---
 
 # Overview
-Take Day of Burn julian day can convert to YYYY-MM-DD
+Take Day of Burn day of year day and convert to YYYY-MM-DD for EE script for extracting FWI.
 
 Input data is from Earth Engine output
 
@@ -107,7 +107,8 @@ st_write(allData1, "../outputs/DoBpts/FislDoBpts.shp", driver="ESRI Shapefile")
 
 
 # Get calendar date
-with quotes and separated by comma to add to GEE code.
+
+Ger calendar date with quotes and separated by comma to add to GEE code. Copy printed list into EE code `BurnDateFWIExtract`
 
 ```{r}
 cat(paste0(sprintf("'%s'", sort(unique(burnData1$Date))), collapse = ", "))
