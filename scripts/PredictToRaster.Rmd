@@ -22,6 +22,7 @@ library(stars)
 # Data
 
 ## predictions
+
 ```{r}
 above = read.csv("../data/PredictLandscapes/BurnDateAbovegroundCombustion.csv")
 ```
@@ -32,6 +33,8 @@ below = read.csv("../data/PredictLandscapes/BurnDateBelowgroundCombustion.csv")
 ```
 
 ## landscapes
+
+Shapefile for 20 landscapes of interest.
 ```{r}
 L20 = st_read("../data/Landscapes/final_plots_lat_lon.shp", "final_plots_lat_lon")
 ```

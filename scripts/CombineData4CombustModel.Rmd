@@ -25,7 +25,7 @@ fwi <- list.files(path="../data/LandscapeData/fwi",pattern='*.csv', full.names =
   purrr::map(., read_csv) %>% 
   bind_rows() %>%
   dplyr::select(BUI:FWI, ID1, ID2, ISI, rh:wspeed) %>%
-  rename(DOB_lst=DOB_Ist, Relative.humidity=rh, Temperature=t, Wind.speed=wspeed,VPD = vpd,) 
+  rename(DOB_lst=DOB_Ist, Relative.humidity=rh, Temperature=t, Wind.speed=wspeed,VPD = vpd) 
 ```
 
 ```{r}
@@ -42,7 +42,7 @@ fwiBurnDate <- list.files(path="../data/LandscapeData/fwiBurnDate",pattern='*.cs
   purrr::map(., read_csv) %>% 
   bind_rows() %>%
   dplyr::select(BUI:FWI, ID1, ID2, ISI, rh:wspeed) %>%
-  rename(DOB_lst=DOB_Ist, Relative.humidity=rh, Temperature=t, Wind.speed=wspeed,VPD = vpd,) 
+  rename(DOB_lst=DOB_Ist, Relative.humidity=rh, Temperature=t, Wind.speed=wspeed,VPD = vpd) 
 ```
 
 ```{r}
@@ -102,7 +102,9 @@ treecover
     full_join(., treecover, by = c("ID1", "ID2", "fireID")))
 ```
 ## Static
+
 ### Terrain
+
 ```{r}
 terrain =  list.files(path="../data/LandscapeData/staticTerrain",pattern='*.csv', full.names = TRUE) %>% 
   purrr::map(., read_csv) %>% 

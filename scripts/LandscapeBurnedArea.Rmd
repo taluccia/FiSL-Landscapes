@@ -20,6 +20,9 @@ library(tidyverse)
 # Data
 
 ## Landscapes
+
+These are field plots from the FiSL project
+
 ```{r}
 Landscapes = st_read("../data/Landscapes/final_plots_lat_lon.shp", "final_plots_lat_lon")
 ```

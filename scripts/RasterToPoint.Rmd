@@ -6,6 +6,7 @@ output: html_document
 ---
 # Overview
 
+Produce point shapefiles for burned areas within landscapes of interest. Each point is a landsat pixel.
 
 # Packages
 ```{r}
@@ -30,6 +31,9 @@ canBurn = st_read("../data/burnArea/LBaCanf3005.shp", "LBaCanf3005")
 ```
 
 ## List of rasters
+
+List of rasters by ecozones. 
+
 ```{r}
 bilist <- list.files(path="../data/LandsatRaster/BI",pattern='tif$', full.names = TRUE)
 ```
@@ -45,6 +49,7 @@ tslist <- list.files(path="../data/LandsatRaster/TS",pattern='tif$', full.names 
 ```
 
 ### Name items in a list with file name
+
 ```{r}
 names(bilist) <- tools::file_path_sans_ext(basename(bilist))
 names(bclist) <- tools::file_path_sans_ext(basename(bclist))
@@ -53,6 +58,7 @@ names(tslist) <- tools::file_path_sans_ext(basename(tslist))
 ```
 
 # Functions
+
 ```{r}
 df_to_sf <- function(x){
   st_as_sf(x, 
@@ -105,7 +111,9 @@ geocan <- function(list){
 }
 
 ```
+
 # Apply Functions
+
 ```{r}
 bi = geousa(bilist)
 bc = geocan(bclist)
@@ -114,6 +122,7 @@ ts = geocan(tslist)
 ```
 
 ## Check and summarize
+
 ```{r}
 bi
 length(unique(bi$ID1))
@@ -138,6 +147,7 @@ unique(ts$ID2)
 ```
 
 # Rename columns to combine
+
 ```{r}
 (
   bc = bc %>% 
@@ -186,6 +196,7 @@ ts = ts %>%
 ```
 
 # Combine all
+
 ```{r}
 combineAll = bind_rows(bi, bc, tp, ts)
 ```
@@ -196,11 +207,12 @@ combineAll = combineAll %>% dplyr::mutate(RID = row_number())
 ```{r}
 combineAll
 ```
+
 # Write to shp
+
 ```{r}
 st_write(combineAll, "../outputs/burnPts/FislBurnPtsAllWgs.shp", driver="ESRI Shapefile")
 ```
-
 
 ```{r}
 st_write(bi, "../outputs/burnPts/FislBiBurnPtsAllWgs.shp", driver="ESRI Shapefile")
