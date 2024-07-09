@@ -1,0 +1,27 @@
+---
+title: "Look at point data"
+author: "Anna Talucci"
+date: "2023-12-18"
+output: html_document
+---
+
+# Overview
+Look at field points
+
+# Packages
+```{r}
+library(terra)
+library(gdalUtilities)
+library(sf)
+library(tidyverse)
+library(stars)
+```
+
+# Data
+```{r}
+points = st_read("../outputs/burnPts/FislBurnPtsAllWgs.shp", "FislBurnPtsAllWgs")
+```
+
+```{r}
+points
+```
