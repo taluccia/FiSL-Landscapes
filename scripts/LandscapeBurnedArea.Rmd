@@ -101,7 +101,9 @@ ggplot() +
   geom_sf(data = Landscapes, fill=NA, color = "blue") +
     coord_sf()
 ```
+
 ## For Canada
+
 ```{r}
 canfp = Landscapes %>% filter(ecoregion %in% c("BOREAL CORDILLERA", "TAIGA PLAIN", "TAIGA SHIELD" )) %>%
   st_transform(., crs = 3005) %>%
@@ -147,6 +149,7 @@ allFP = bind_rows(akFires, CanFires)
     mutate(ID2=fireYr)
 )
 ```
+
 
 ```{r}
 allFP %>%

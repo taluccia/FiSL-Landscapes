@@ -3,26 +3,31 @@
 
 # Overview
 
-The repository host processes and code for producing Landscape layers that feed into the iLand Model for FiSL.
+The repository host processes and code for producing combustion Landscape layers that feed into the iLand Model for FiSL. Combustion predictions are based on models produced by Stefano Potter for the ABOVEFED project. 
 
 The process is dependent on a combination of Earth Engine (EE) Processes and R
 
 # Process
 
-| Step    | Script                         | plateform  | Input files        | output files  |
-| ------- |:------------------------------:| ----------:| ------------------:| -------------:|
-| 1       | OrganizeShpData.Rmd            |  R         |
-| 2       | LandsatImageForPoints          |  EE        | Landscape polygons
-| 3       | LandscapeBurnedArea.Rmd        |  R         | Landscapes fires   |
-| 4       | RasterToPoint.Rmd              |  R         | Landsat Rasters    | Point shp by Ecozone |
-| 5       | StaticVegetation               |  EE        | point shp from #4  |
-| 6 | | | | | |
-| 7 | | | | | |
-| 8 | | | | | |
-| 9 | | | | | |
-| 10 | | | | | |
-| 11      | CombineData4CombustModel.Rmd    | R       | | | |
-| 12      | PredictToRaster.Rmd             | R         |  | | |
+| Step    | Script                           | plateform  | Input files        | output files                |
+| ------- |:------------------------------:  | ----------:| ------------------:| ---------------------------:|
+| 1       | OrganizeShpData.Rmd              |  R         | landscape, fire perimeters, ecozones| polygon shp file of landscapes|
+| 2       | LandsatImageForPoints            |  EE        | Landscape polygons | Point shp file for pixel centroid|
+| 3       | LandscapeBurnedArea.Rmd          |  R         | Landscapes, fires  |                             |
+| 4       | RasterToPoint.Rmd                |  R         | Landsat Rasters    | Point shp by Ecozone        |
+| 5       | BurnDate                         |  EE        | point shp from #4  | csv of pixel values at point |
+| 6       | DoYToCalendar.Rmd                |  R         | point shp from #4  | csv of pixel values at point |
+| 7       | BurnDateFWIExtract               |  EE        | point shp from #5  | csv of pixel values at point |
+| 8       | LandsatVegetationIndicesExtract  |  EE        | point shp from #4  | csv of pixel values at point |
+| 9       | LandsatTCTExtract                |  EE        | point shp from #4  | csv of pixel values at point |
+| 10      | StaticVegetation                 |  EE        | point shp from #4  | csv of pixel values at point |
+| 11      | TreeCoverExtract                 |  EE        | point shp from #4  | csv of pixel values at point |
+| 12      | StaticTerrain                    |  EE        | point shp from #4  | csv of pixel values at point |
+| 13      | StaticSoil                       |  EE        | point shp from #4  | csv of pixel values at point |
+| 14      | StaticPFI                        |  EE        | point shp from #4  | csv of pixel values at point |
+| 15      | CombineData4CombustModel.Rmd     |  R         | csv from #7-14     | csv of combined extracted data|
+| 16      | CombustionModel.Rmd              |  R         | csv #15, models, training and variable importance data | above and below combustion csv |
+| 16      | PredictToRaster.Rmd              |  R         |  csv from #16      | ratsers above & below combustion | 
 
 
 
@@ -54,9 +59,11 @@ Step 13 -- EE-- [StaticSoil](https://code.earthengine.google.com/058b3229f4aac78
 
 Step 14 -- EE-- [StaticPFI](https://code.earthengine.google.com/c29c51592040d66b4250a9434a3e8659) Extract Used burned points to extract static PFI soil variable 
 
-Step 15 -- R -- CombineData4CombustModel.Rmd Take outputs from Steps 7-14 and combine for 
+Step 15 -- R -- CombineData4CombustModel.Rmd Take outputs from Steps 7-14 and combine for combustion model
 
-Step 16 -- R -- PredictToRaster.Rmd  
+Step 16 -- R -- CombustionModel.Rmd  
+
+Step 17 -- R -- PredictToRaster.Rmd  
 
 
 # Final Raster product
@@ -95,4 +102,5 @@ All of these scripts take a shapefile of burned pixel centroids as the input.  T
 # ABoVE FED Data
 
 [SK Combustion](https://daac.ornl.gov/cgi-bin/dsviewer.pl?ds_id=1740)
-[AK + Canada Combustion](https://daac.ornl.gov/cgi-bin/dsviewer.pl?ds_id=2063)
+
+[AK & Canada Combustion](https://daac.ornl.gov/cgi-bin/dsviewer.pl?ds_id=2063)
