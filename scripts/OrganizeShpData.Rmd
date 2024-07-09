@@ -11,7 +11,7 @@ Pull out AK fire perimeters from full USA data set
 
 Combines Canadian Fires into single shape file
 
-Adds eco property to landscapes
+Adds ecozone property to landscapes
 
 # Packages
 ```{r}
@@ -22,33 +22,34 @@ library(tidyverse)
 ```
 
 # Data
-## State
-	
-```{r}
-st = st_read("../data/alaska/GU_StateOrTerritory.shp", "GU_StateOrTerritory") 
-```
 
 ## Landscapes
+
 ```{r}
 landscapes = st_read("../data/Landscapes/final_plots_lat_lon.shp", "final_plots_lat_lon")
 ```
 
 ## USA Fire perimeters
+
 ```{r}
 usa = st_read("../data/mtbs_perimeter_data/mtbs_perims_DD.shp", "mtbs_perims_DD")
 ```
+
 ## Canadian Fires
+
 ```{r}
 CanFires = st_read("../data/nbac_1986_to_2020/nbac_1986_to_2020_20210810.shp", "nbac_1986_to_2020_20210810")
 CanFires2021 = st_read("../data/nbac_2021/nbac_2021_r9_20220624.shp", "nbac_2021_r9_20220624")
 ```
 
 # Select Alaska Fires
+
 ```{r}
 ( akFires = usa %>% filter(BurnBndLat > 50) )
 ```
 
 # Combine Canadian Fires
+
 ```{r}
 ( CanFires = CanFires %>% dplyr::select(-BASRC_1, -new_flg) %>%
     bind_rows(., CanFires2021) %>%
@@ -56,14 +57,9 @@ CanFires2021 = st_read("../data/nbac_2021/nbac_2021_r9_20220624.shp", "nbac_2021
 ```
 
 
-#  Alaska Boundary 
- 
-```{r}
-(akState = st %>% filter(NAME_En == "Alaska") )
-```
-
-
 # Add property to landscapes
+
+Add Ecozones to landscape polygons. 
 
 ```{r}
 landscapes = landscapes %>% 
@@ -82,6 +78,11 @@ landscapes = landscapes %>%
 landscapes
 ```
 
+
+```{r}
+plot(st_geometry(landscapes))
+```
+
 # Reproject
 
 ```{r}
@@ -91,6 +92,7 @@ CanFires = st_transform(CanFires, crs = 3005)
 ```
 
 # Write to file
+
 ```{r eval=FALSE, include=FALSE}
 st_write(ak_st, "../outputs/shp/AlaskaState3338.shp", driver="ESRI Shapefile")
 ```
