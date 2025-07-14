@@ -52,6 +52,11 @@ rsconnect/
 **/.DS_Store
 **/._models
 **/._FiSL-Landscapes.Rproj
+._*
+._.*
+
+
+
 # exclude specific folders from push to github
 figures/*
 images/*
